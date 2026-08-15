@@ -51,6 +51,7 @@ def _model_label(client, title: str, description: str) -> dict:
 
 _RATE_LOCK = threading.Lock()
 _NEXT_REQUEST = 0.0
+_THREAD_STATE = threading.local()
 
 
 def _model_label_safe(title: str, description: str) -> dict:
@@ -64,9 +65,12 @@ def _model_label_safe(title: str, description: str) -> dict:
         time.sleep(wait)
 
     try:
-        from anthropic import Anthropic
-        client = Anthropic(api_key=C.ANTHROPIC_API_KEY, timeout=20.0,
-                           max_retries=0)
+        client = getattr(_THREAD_STATE, "client", None)
+        if client is None:
+            from anthropic import Anthropic
+            client = Anthropic(api_key=C.ANTHROPIC_API_KEY, timeout=C.MODEL_TIMEOUT,
+                               max_retries=0)
+            _THREAD_STATE.client = client
         return _model_label(client, title, description)
     except Exception as exc:
         return {"label": "none", "reason": f"model request failed: {type(exc).__name__}"}
