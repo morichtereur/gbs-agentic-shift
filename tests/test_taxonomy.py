@@ -57,3 +57,13 @@ def test_polish_automation_signal():
     r = classify_text("Analityk automatyzacji procesów finansowych i robotyzacji.")
     assert r.label == "agent_ops"
     assert "automatyzacji procesów" in r.hits["agent_ops"]
+
+
+def test_german_ai_agent_signal():
+    r = classify_text("Finance Operations Specialist: KI-first-Infrastruktur; du entwickelst KI-Agenten.")
+    assert r.label == "agent_ops"
+
+
+def test_employer_ai_does_not_relabel_payments_role():
+    r = classify_text("Operations Manager - Payments. The AI-enabled company automates tenant management.")
+    assert r.scores["agent_ops"] == 0

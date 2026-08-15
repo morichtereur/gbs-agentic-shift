@@ -134,6 +134,9 @@ accuracy**; `agent_ops` precision is **100%**, but recall is only **42.9%**.
 That recall is reported because a low observed `agent_ops` share is otherwise
 easy to mistake for proof that the market has no agent-ops demand.
 
+The latest diagnostic run reaches `100%` agent_ops recall in the DE, IN, NL,
+and PL slices, but the overall country-set accuracy is only `60%`. This is a
+debugging signal for taxonomy work, not a country ranking or a market estimate.
 The current 12-market design is source-specific: Adzuna covers `PL`, `IN`,
 `MX`, `NL`, `DE`, `CH`, `ES`, and `SG`; Jooble covers `PT`, `RO`, `HU`, and
 `CZ`. These are a deliberate comparison sample, not a claim that they represent

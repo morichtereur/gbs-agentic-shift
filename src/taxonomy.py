@@ -84,6 +84,8 @@ FAMILIES: Dict[str, List[str]] = {
         "process automation", "workflow automation", "automation engineer", "automation strategy",
         "automation platform", "rpa", "rpa automation", "ai automation",
         "sap ai", "autonomous finance", "smart automation",
+        "ki-agent", "ki-agenten", "ki-first", "ai-native finance", "applied ai",
+        "design and deploy ai agents", "develop ai agents", "agent creation",
         "automatyzacja", "automatyzacji", "automatyzacja procesów", "automatyzacji procesów",
         "robotyzacja", "robotyzacji", "sztuczna inteligencja",
         "uczenie maszynowe", "agenci ai", "orkiestracja agentów",
@@ -130,6 +132,13 @@ def classify_text(text: str) -> TaxonomyResult:
         matched = [phrase for phrase, rx in patterns if rx.search(text)]
         hits[fam] = matched
         scores[fam] = len(matched)
+
+    # Employer/product AI language must not turn a sales, customer-success, or
+    # payments role into agent operations. Keep the rule visible and conservative.
+    role_text = text[:180]
+    if re.search(r"(?i)\b(account executive|head of sales|sales manager|customer success manager|operations manager\s*[—-]?\s*payments)\b", role_text):
+        scores["agent_ops"] = 0
+        hits["agent_ops"] = []
 
     top = max(scores.values())
     if top == 0:
