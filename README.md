@@ -116,6 +116,11 @@ Polish-language postings.
 Evaluate the completed worksheet with `make eval-country`; it reports accuracy
 and `agent_ops` recall separately for each market.
 
+The current country review is a small diagnostic set (`n=10` per market), not
+a prevalence estimate. It is useful for finding language and recall failures,
+but it is too small to support ranking countries or making a country-level
+agent_ops claim on its own.
+
 The repository includes a committed generated snapshot in `RESULTS.md`,
 `dashboard.html`, and `data/chart_mix.png`, so a reviewer can see an actual
 finding before configuring API keys. These are dated point-in-time outputs, not
