@@ -101,6 +101,21 @@ Read each posting and fill its empty `gold` value with exactly one of
 `eval/labels.jsonl`, then run `make eval`. The template uses existing labels
 only to balance the sample; it does not copy them into the gold set.
 
+For country-level validation, generate a separate stratified worksheet:
+
+```bash
+.venv/bin/python -m eval.build_country_gold_template
+```
+
+It selects 10 relevant postings per observed market (`de`, `gb`, `in`, `nl`,
+`pl`, `za`). Label these independently with `transactional`, `judgment`,
+`agent_ops`, or `none`; do not reuse the model labels. This is the required
+check before interpreting country-level agent_ops differences, especially for
+Polish-language postings.
+
+Evaluate the completed worksheet with `make eval-country`; it reports accuracy
+and `agent_ops` recall separately for each market.
+
 The repository includes a committed generated snapshot in `RESULTS.md`,
 `dashboard.html`, and `data/chart_mix.png`, so a reviewer can see an actual
 finding before configuring API keys. These are dated point-in-time outputs, not

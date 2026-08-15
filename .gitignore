@@ -3,4 +3,5 @@ __pycache__/
 .env
 data/*.duckdb
 eval/labels.todo.jsonl
+eval/labels_country.todo.jsonl
 .venv/
