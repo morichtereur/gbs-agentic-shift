@@ -7,6 +7,7 @@ underlying postings so a reader can audit any bucket.
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 import duckdb
 
 from src import config as C
@@ -29,6 +30,7 @@ def run() -> None:
     ]
     payload = json.dumps(data, ensure_ascii=True)
     n = len(data)
+    run_date = datetime.now(timezone.utc).date().isoformat()
 
     page = """<!doctype html>
 <meta charset="utf-8">
@@ -89,7 +91,7 @@ def run() -> None:
   @media (prefers-reduced-motion:reduce) {{ .segment {{ transition:none; }} }}
 </style>
 <main class="shell">
-  <header class="masthead"><div class="mark"><span class="mark-dot"></span> GBS / agentic shift</div><div class="meta">Research brief · live snapshot</div></header>
+  <header class="masthead"><div class="mark"><span class="mark-dot"></span> GBS / agentic shift</div><div class="meta">Research brief · snapshot {run_date}</div></header>
   <section class="hero"><div><div class="eyebrow">Labour-market readout / 01</div><h1>Where the GBS job market is asking for judgment.</h1><p class="dek">A transparent scan of live finance-operations postings, testing whether the pyramid-to-diamond thesis is visible in demand today.</p></div><div class="hero-note"><strong>Point-in-time</strong>Current postings are a cross-section, not a trend line. They show demand, not workforce headcount.</div></section>
   <section><div class="section-head"><h2>The shape of demand</h2><span class="section-kicker">Family mix / n={n}</span></div><div class="kpis" id="kpis"></div><div class="mix" id="mix" role="img" aria-label="Family mix"></div><div class="legend" id="legend"></div></section>
   <section><div class="section-head"><h2>Postings, made inspectable</h2><span class="section-kicker" id="result-count"></span></div><div class="toolbar"><input id="search" type="search" placeholder="Search title, company, or evidence" aria-label="Search postings"><select id="country" aria-label="Filter by country"><option value="all">All countries</option></select><div id="filters"></div><button id="export" type="button">Export visible CSV</button><span class="toolbar-note">Rules leave phrases. Models leave reasons.</span></div><div class="table-wrap"><table><thead><tr><th>Market</th><th>Role</th><th>Family</th><th>Why it landed here</th></tr></thead><tbody id="rows"></tbody></table><div class="empty" id="empty" hidden>No postings match those filters.</div></div></section>
@@ -117,7 +119,7 @@ const countries=[...new Set(DATA.map(d=>d.country))].sort(), select=document.get
 </script>
 """
     out = C.ROOT / "dashboard.html"
-    out.write_text(page.format(n=n, payload=payload))
+    out.write_text(page.format(n=n, payload=payload, run_date=run_date))
     print(f"Wrote dashboard.html ({n} postings).")
 
 

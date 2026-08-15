@@ -14,6 +14,7 @@ Two cuts, both aimed at McKinsey's thesis:
 from __future__ import annotations
 
 import re
+from datetime import datetime, timezone
 import duckdb
 import matplotlib
 matplotlib.use("Agg")
@@ -99,6 +100,9 @@ def run() -> None:
     def pct(n): return f"{n} ({n/total:.0%})"
     lines = [
         "# Results",
+        "",
+        f"**Generated:** {datetime.now(timezone.utc).date().isoformat()}  "
+        "**Scope:** live Adzuna postings, point-in-time cross-section",
         "",
         f"Cross-section of **{total}** live GBS / finance-operations postings "
         f"({', '.join(C.COUNTRIES)}), pulled from Adzuna. Point-in-time, not a trend.",

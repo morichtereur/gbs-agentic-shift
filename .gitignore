@@ -2,7 +2,4 @@ __pycache__/
 *.pyc
 .env
 data/*.duckdb
-data/*.png
-dashboard.html
-RESULTS.md
 .venv/

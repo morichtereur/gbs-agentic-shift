@@ -85,6 +85,11 @@ single-file `dashboard.html` you can open in a browser and hand to a colleague â
 filter by family, country, or free-text search, export visible rows as CSV, and
 every row shows why it landed there.
 
+The repository also includes the latest generated snapshot in `RESULTS.md`,
+`dashboard.html`, and `data/chart_mix.png`, so a reviewer can see an actual
+finding before configuring API keys. These are dated point-in-time outputs, not
+historical data; rerunning the pipeline replaces them with a newer snapshot.
+
 ## Read the output correctly
 
 - **Family mix:** a distribution of posting classifications, not a measurement
