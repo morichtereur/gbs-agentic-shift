@@ -105,14 +105,15 @@ The repository also includes the latest generated snapshot in `RESULTS.md`,
 finding before configuring API keys. These are dated point-in-time outputs, not
 historical data; rerunning the pipeline replaces them with a newer snapshot.
 
-The active default comparison set covers Germany, the UK and Netherlands,
-Poland as a Central/Eastern European benchmark, and India and South Africa as
-global GBS delivery hubs available through the configured Adzuna endpoint. The
-Philippines, Malaysia and Costa Rica are relevant GBS hubs, but returned `404`
-for this Adzuna country endpoint and are therefore not silently represented as
-zero. This is a deliberate market sample, not a claim that these countries
-represent all outsourcing activity. Override `GBS_COUNTRIES` when a narrower
-regional comparison is more appropriate.
+The current 12-market design is source-specific: Adzuna covers `PL`, `IN`,
+`MX`, `NL`, `DE`, `CH`, `ES`, and `SG`; Jooble covers `PT`, `RO`, `HU`, and
+`CZ`. These are a deliberate comparison sample, not a claim that they represent
+all outsourcing activity. The report keeps source provenance visible because
+Jooble and Adzuna are aggregators with potentially overlapping supply.
+
+The Jooble adapter fails closed: an API `403` or unavailable Jooble market is
+reported as unavailable and contributes no zero-valued jobs to the findings.
+This keeps a source outage from being mistaken for weak hiring demand.
 
 ## Read the output correctly
 

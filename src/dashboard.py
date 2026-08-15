@@ -16,7 +16,7 @@ from src import config as C
 def run() -> None:
     con = duckdb.connect(str(C.DB_PATH))
     rows = con.execute("""
-        SELECT p.country, p.title, p.company, l.label, l.source, l.hits, l.reason
+        SELECT p.source, p.country, p.title, p.company, l.label, l.source, l.hits, l.reason
         FROM labels l JOIN postings p ON p.id = l.id
         WHERE l.label != 'none'
         ORDER BY l.label, p.country
@@ -24,8 +24,8 @@ def run() -> None:
     con.close()
 
     data = [
-        {"country": r[0], "title": r[1], "company": r[2],
-         "label": r[3], "source": r[4], "hits": r[5], "reason": r[6]}
+        {"source_name": r[0], "country": r[1], "title": r[2], "company": r[3],
+         "label": r[4], "source": r[5], "hits": r[6], "reason": r[7]}
         for r in rows
     ]
     payload = json.dumps(data, ensure_ascii=True)
@@ -95,7 +95,7 @@ def run() -> None:
   <section class="hero"><div><div class="eyebrow">Labour-market readout / 01</div><h1>Where the GBS job market is asking for judgment.</h1><p class="dek">A transparent scan of live finance-operations postings, testing whether the pyramid-to-diamond thesis is visible in demand today.</p></div><div class="hero-note"><strong>Point-in-time</strong>Current postings are a cross-section, not a trend line. They show demand, not workforce headcount.</div></section>
   <section><div class="section-head"><h2>The shape of demand</h2><span class="section-kicker">Family mix / n={n}</span></div><div class="kpis" id="kpis"></div><div class="mix" id="mix" role="img" aria-label="Family mix"></div><div class="legend" id="legend"></div></section>
   <section><div class="section-head"><h2>Postings, made inspectable</h2><span class="section-kicker" id="result-count"></span></div><div class="toolbar"><input id="search" type="search" placeholder="Search title, company, or evidence" aria-label="Search postings"><select id="country" aria-label="Filter by country"><option value="all">All countries</option></select><div id="filters"></div><button id="export" type="button">Export visible CSV</button><span class="toolbar-note">Rules leave phrases. Models leave reasons.</span></div><div class="table-wrap"><table><thead><tr><th>Market</th><th>Role</th><th>Family</th><th>Why it landed here</th></tr></thead><tbody id="rows"></tbody></table><div class="empty" id="empty" hidden>No postings match those filters.</div></div></section>
-  <footer class="footer"><span>Source: Adzuna Search API · countries and query terms set in <strong>src/config.py</strong></span><span>Taxonomy is deterministic; Claude handles only the ambiguous residual.</span></footer>
+  <footer class="footer"><span>Sources: Adzuna + Jooble · market sets in <strong>src/config.py</strong></span><span>Taxonomy is deterministic; Claude handles only the ambiguous residual.</span></footer>
 </main>
 <script>
 const DATA = {payload};
@@ -110,9 +110,9 @@ function drawSummary() {{
   FAMS.forEach(f=>{{ const share=100*c[f]/total; const seg=make("div",share>=8?f+" · "+Math.round(share)+"%":"","segment "+f); seg.style.width=share+"%"; seg.setAttribute("aria-label",f+" "+c[f]); mix.append(seg); }});
   const legend=document.getElementById("legend"); legend.innerHTML=""; FAMS.forEach(f=>{{ const item=make("span",undefined,"legend-item"); item.append(make("i",undefined,"swatch "+f),make("span",f+" · "+c[f])); legend.append(item); }});
 }}
-function filtered() {{ const q=state.search.toLowerCase(); return DATA.filter(d=>(state.family==="all"||d.label===state.family)&&(state.country==="all"||d.country===state.country)&&(!q||[d.title,d.company,d.hits,d.reason].join(" ").toLowerCase().includes(q))); }}
+function filtered() {{ const q=state.search.toLowerCase(); return DATA.filter(d=>(state.family==="all"||d.label===state.family)&&(state.country==="all"||d.country===state.country)&&(!q||[d.title,d.company,d.source_name,d.hits,d.reason].join(" ").toLowerCase().includes(q))); }}
 function drawFilters() {{ const box=document.getElementById("filters"); box.innerHTML=""; ["all",...FAMS].forEach(f=>{{ const b=make("button",f); if(f===state.family) b.className="active"; b.onclick=()=>{{ state.family=f; render(); }}; box.append(b); }}); }}
-function drawRows() {{ const rows=filtered(), tb=document.getElementById("rows"), empty=document.getElementById("empty"); tb.innerHTML=""; document.getElementById("result-count").textContent=rows.length+" of "+DATA.length+" shown"; empty.hidden=rows.length>0; rows.forEach(d=>{{ const tr=make("tr"); const why=d.source==="model"?(d.reason||"Model classification"):(d.hits||"Keyword evidence"); const market=make("td"); market.append(make("div",d.country,"country"),make("div",d.company||"Company not listed","company")); const role=make("td",d.title,"title"); const family=make("td"); family.append(make("span",d.label,"tag "+d.label)); const evidence=make("td"); evidence.append(make("span",why,"why"),make("span",d.source==="model"?"Claude fallback":"Deterministic taxonomy","source")); tr.append(market,role,family,evidence); tb.append(tr); }}); }}
+function drawRows() {{ const rows=filtered(), tb=document.getElementById("rows"), empty=document.getElementById("empty"); tb.innerHTML=""; document.getElementById("result-count").textContent=rows.length+" of "+DATA.length+" shown"; empty.hidden=rows.length>0; rows.forEach(d=>{{ const tr=make("tr"); const why=d.source==="model"?(d.reason||"Model classification"):(d.hits||"Keyword evidence"); const market=make("td"); market.append(make("div",d.source_name+" / "+d.country,"country"),make("div",d.company||"Company not listed","company")); const role=make("td",d.title,"title"); const family=make("td"); family.append(make("span",d.label,"tag "+d.label)); const evidence=make("td"); evidence.append(make("span",why,"why"),make("span",d.source==="model"?"Claude fallback":"Deterministic taxonomy","source")); tr.append(market,role,family,evidence); }}); }}
 function exportCsv() {{ const headers=["country","title","company","label","source","hits","reason"]; const body=filtered().map(d=>headers.map(h=>'"'+String(d[h]||"").replaceAll('"','""')+'"').join(",")); const blob=new Blob([[headers.join(","),...body].join("\\n")],{{type:"text/csv"}}); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="gbs-agentic-shift-visible.csv"; a.click(); URL.revokeObjectURL(a.href); }}
 function render() {{ drawSummary(); drawFilters(); drawRows(); }}
 const countries=[...new Set(DATA.map(d=>d.country))].sort(), select=document.getElementById("country"); countries.forEach(c=>select.append(make("option",c))); document.getElementById("search").oninput=e=>{{state.search=e.target.value;drawRows();}}; select.onchange=e=>{{state.country=e.target.value;drawRows();}}; document.getElementById("export").onclick=exportCsv; render();

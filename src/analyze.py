@@ -51,10 +51,10 @@ def run() -> None:
     """).fetchall()
 
     by_country = con.execute("""
-        SELECT p.country, l.label, count(*) AS n
+        SELECT p.source, p.country, l.label, count(*) AS n
         FROM labels l JOIN postings p ON p.id = l.id
         WHERE l.label != 'none'
-        GROUP BY p.country, l.label ORDER BY p.country, n DESC
+        GROUP BY p.source, p.country, l.label ORDER BY p.source, p.country, n DESC
     """).fetchall()
 
     titles = con.execute("""
@@ -105,7 +105,7 @@ def run() -> None:
         "**Scope:** live Adzuna postings, point-in-time cross-section",
         "",
         f"Cross-section of **{total}** live GBS / finance-operations postings "
-        f"({', '.join(C.COUNTRIES)}), pulled from Adzuna. Point-in-time, not a trend.",
+        f"({', '.join(C.COUNTRIES)}), pulled from Adzuna and Jooble. Point-in-time, not a trend.",
         "",
         "## Family mix",
         "",
@@ -141,8 +141,9 @@ def run() -> None:
         "| country | family | postings |",
         "|---|---|---|",
     ]
-    for country, label, n in by_country:
-        lines.append(f"| {country} | {label} | {n} |")
+    lines[-2] = "| source / country | family | postings |"
+    for source_name, country, label, n in by_country:
+        lines.append(f"| {source_name} / {country} | {label} | {n} |")
     lines += [
         "",
         "- Taxonomy accuracy against the hand-labelled gold set: run `python -m eval.eval_classify`.",

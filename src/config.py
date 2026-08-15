@@ -11,13 +11,16 @@ DB_PATH = DATA / "postings.duckdb"
 # Register at https://developer.adzuna.com/ for app_id + app_key.
 ADZUNA_APP_ID = os.getenv("ADZUNA_APP_ID", "")
 ADZUNA_APP_KEY = os.getenv("ADZUNA_APP_KEY", "")
+JOOBLE_API_KEY = os.getenv("JOOBLE_API_KEY", "")
+JOOBLE_REQUEST_LIMIT = int(os.getenv("JOOBLE_REQUEST_LIMIT", "500"))
+JOOBLE_REQUEST_INTERVAL = float(os.getenv("JOOBLE_REQUEST_INTERVAL", "0.5"))
 
 # Countries to pull. Adzuna uses ISO-ish codes: de, gb, us, fr, ...
 # Comparison set: Western Europe, Central/Eastern Europe, and established
 # global GBS delivery hubs. Keep the set explicit so geography is reproducible.
-COUNTRIES = os.getenv(
-    "GBS_COUNTRIES", "de,gb,nl,pl,in,za"
-).split(",")
+ADZUNA_COUNTRIES = os.getenv("ADZUNA_COUNTRIES", "pl,in,mx,nl,de,ch,es,sg").split(",")
+JOOBLE_COUNTRIES = os.getenv("JOOBLE_COUNTRIES", "pt,ro,hu,cz").split(",")
+COUNTRIES = ADZUNA_COUNTRIES + JOOBLE_COUNTRIES
 
 # Search terms that surface GBS / finance-operations postings.
 SEARCH_TERMS = [
