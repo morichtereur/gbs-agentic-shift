@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 import duckdb
 
 from src import config as C
+from src.orgtype import org_type
 
 
 def run() -> None:
@@ -23,10 +24,15 @@ def run() -> None:
     """).fetchall()
     con.close()
 
+    # Advisory firms are held out here for the same reason as in RESULTS.md:
+    # they sell advice about GBS rather than perform it. Keeping the two
+    # artifacts on one population means their totals can be compared.
     data = [
         {"source_name": r[0], "country": r[1], "title": r[2], "company": r[3],
-         "label": r[4], "source": r[5], "hits": r[6], "reason": r[7]}
+         "label": r[4], "source": r[5], "hits": r[6], "reason": r[7],
+         "org": org_type(r[3])}
         for r in rows
+        if org_type(r[3]) != "advisory"
     ]
     payload = json.dumps(data, ensure_ascii=True)
     n = len(data)

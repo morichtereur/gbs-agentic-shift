@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import re
 import json
+from collections import Counter
 from datetime import datetime, timezone
 import duckdb
 import matplotlib
@@ -23,6 +24,7 @@ import matplotlib.pyplot as plt
 
 from src import config as C
 from src.taxonomy import classify_text
+from src.orgtype import org_type, market_type
 
 SENIOR = re.compile(r"(?i)\b(senior|lead|manager|head|principal|director|vp)\b")
 JUNIOR = re.compile(r"(?i)\b(junior|graduate|entry|trainee|apprentice|intern|clerk|assistant)\b")
@@ -53,47 +55,56 @@ def _gold_metrics() -> tuple[float, float] | None:
 def run() -> None:
     con = duckdb.connect(str(C.DB_PATH))
 
-    total = con.execute(
-        "SELECT count(*) FROM labels WHERE label != 'none'"
-    ).fetchone()[0]
-    if total == 0:
+    # Every labelled posting with the two cuts attached. Advisory firms match
+    # the same search terms but sell advice about GBS rather than doing it, so
+    # they are held out of the headline mix and counted separately.
+    rows = con.execute("""
+        SELECT p.company, p.country, p.source AS source_name, p.title,
+               l.label, l.source AS decided_by
+        FROM labels l JOIN postings p ON p.id = l.id
+        WHERE l.label != 'none'
+    """).fetchall()
+    if not rows:
         print("No labelled postings. Run fetch + classify first.")
         return
 
-    mix = con.execute("""
-        SELECT label, count(*) AS n
-        FROM labels WHERE label != 'none'
-        GROUP BY label ORDER BY n DESC
-    """).fetchall()
+    Row = lambda r: {
+        "org": org_type(r[0]), "country": r[1], "market": market_type(r[1]),
+        "source_name": r[2], "title": r[3], "label": r[4], "decided_by": r[5],
+    }
+    tagged = [Row(r) for r in rows]
+    advisory_n = sum(1 for r in tagged if r["org"] == "advisory")
+    in_scope = [r for r in tagged if r["org"] != "advisory"]
+    total = len(in_scope)
 
-    by_country = con.execute("""
-        SELECT p.source, p.country, l.label, count(*) AS n
-        FROM labels l JOIN postings p ON p.id = l.id
-        WHERE l.label != 'none'
-        GROUP BY p.source, p.country, l.label ORDER BY p.source, p.country, n DESC
-    """).fetchall()
+    FAMILIES = ("transactional", "judgment", "agent_ops")
 
-    titles = con.execute("""
-        SELECT p.title, l.label
-        FROM labels l JOIN postings p ON p.id = l.id
-        WHERE l.label != 'none'
-    """).fetchall()
+    def counts_by(subset):
+        return {f: sum(1 for r in subset if r["label"] == f) for f in FAMILIES}
+
+    by_org = {o: counts_by([r for r in in_scope if r["org"] == o])
+              for o in ("captive", "bpo")}
+    by_market = {m: counts_by([r for r in in_scope if r["market"] == m])
+                 for m in ("delivery", "retained", "mixed")}
+
+    mix = sorted(counts_by(in_scope).items(), key=lambda kv: -kv[1])
+
+    country_counts = Counter(
+        (r["source_name"], r["country"], r["label"]) for r in in_scope
+    )
+    by_country = sorted(
+        ((source, country, label, n) for (source, country, label), n in country_counts.items()),
+        key=lambda t: (t[0], t[1], -t[3]),
+    )
 
     sen = {"junior": {}, "senior": {}, "mid/unknown": {}}
-    for title, label in titles:
-        b = sen[_seniority(title)]
-        b[label] = b.get(label, 0) + 1
+    for r in in_scope:
+        b = sen[_seniority(r["title"])]
+        b[r["label"]] = b.get(r["label"], 0) + 1
 
-    src = con.execute("""
-        SELECT source, count(*) FROM labels WHERE label != 'none' GROUP BY source
-    """).fetchall()
-    observed = con.execute("""
-        SELECT p.source, p.country, count(*)
-        FROM postings p JOIN labels l ON p.id = l.id
-        WHERE l.label != 'none'
-        GROUP BY p.source, p.country
-        ORDER BY p.source, p.country
-    """).fetchall()
+    src = list(Counter(r["decided_by"] for r in in_scope).items())
+    observed = sorted({(r["source_name"], r["country"]) for r in in_scope})
+    observed = [(source, country, 0) for source, country in observed]
     excluded = con.execute(
         "SELECT count(*) FROM labels WHERE label = 'none'"
     ).fetchone()[0]
@@ -171,6 +182,52 @@ def run() -> None:
     lines += [
         "",
         "![mix](data/chart_mix.png)",
+        "",
+        f"Excludes **{advisory_n}** postings from advisory firms (consultancies selling "
+        "GBS advice rather than performing GBS work). Third-party BPO delivery is kept "
+        "in — it is the same work, outsourced — and broken out below.",
+        "",
+        "## By market type",
+        "",
+        "Delivery hubs and high-cost retained markets are different populations. "
+        "Pooling them makes the headline partly a statement about the country basket, "
+        "so the split is reported rather than averaged away.",
+        "",
+        "| market type | postings | transactional | judgment | agent_ops |",
+        "|---|---|---|---|---|",
+    ]
+    MARKET_NOTE = {
+        "delivery": "low-cost delivery hubs",
+        "retained": "high-cost, HQ / process ownership",
+        "mixed": "regional HQ alongside nearshore delivery",
+    }
+    for mk in ("delivery", "retained", "mixed"):
+        c = by_market[mk]
+        n = sum(c.values())
+        if not n:
+            continue
+        lines.append(
+            f"| {mk} ({MARKET_NOTE[mk]}) | {n} | "
+            f"{c['transactional']/n:.0%} | {c['judgment']/n:.0%} | {c['agent_ops']/n:.1%} |"
+        )
+    lines += [
+        "",
+        "## By organisation type",
+        "",
+        "| organisation | postings | transactional | judgment | agent_ops |",
+        "|---|---|---|---|---|",
+    ]
+    ORG_NOTE = {"captive": "in-house GBS", "bpo": "third-party delivery"}
+    for o in ("captive", "bpo"):
+        c = by_org[o]
+        n = sum(c.values())
+        if not n:
+            continue
+        lines.append(
+            f"| {o} ({ORG_NOTE[o]}) | {n} | "
+            f"{c['transactional']/n:.0%} | {c['judgment']/n:.0%} | {c['agent_ops']/n:.1%} |"
+        )
+    lines += [
         "",
         "## By seniority (title-inferred, crude)",
         "",

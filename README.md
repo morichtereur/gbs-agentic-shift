@@ -12,14 +12,14 @@ on faith.
 
 ## Key finding
 
-**The diamond is not visible yet.** Across 2,159 live GBS / finance-operations
+**The diamond is not visible yet.** Across 2,110 live GBS / finance-operations
 postings in ten markets:
 
 | family | postings | share |
 |---|---|---|
-| transactional | 928 | 43% |
-| judgment | 1,198 | 55% |
-| agent_ops | **33** | **2%** |
+| transactional | 921 | 44% |
+| judgment | 1,157 | 55% |
+| agent_ops | **32** | **2%** |
 
 The transactional base is not thin, and the agent-ops layer barely exists.
 Correcting the observed count for the classifier's own measured recall of 42.9%
@@ -27,7 +27,45 @@ lifts agent-ops to roughly 4% — still marginal. A point-in-time cross-section
 cannot show a trend, so this does not disprove the thesis; it establishes that
 as of this snapshot, hiring demand has not moved there.
 
-![Family mix across 2,159 postings](data/chart_mix.png)
+![Family mix](data/chart_mix.png)
+
+### The base did not shrink. It changed employer.
+
+Splitting the same postings by who is hiring is the sharpest cut in the data:
+
+| organisation | postings | transactional | judgment |
+|---|---|---|---|
+| captive (in-house GBS) | 1,869 | 38% | 60% |
+| **third-party BPO** | 241 | **84%** | 15% |
+
+An in-house GBS function looks diamond-shaped on its own. It looks that way in
+part because the transactional layer sits at a provider rather than on the
+captive payroll — Accenture, Genpact, Capgemini and peers hire 84% transactional
+against the captive 38%. Outsourcing and automation produce the same shape in a
+captive-only readout, and only the provider cut tells them apart. This is a
+hiring-side observation, not a measurement of work volume, but it is the reason
+a captive-only sample would overstate the shift.
+
+### The headline depends on the country basket
+
+| market type | postings | transactional | judgment | agent_ops |
+|---|---|---|---|---|
+| delivery — low-cost hubs (in, pl, mx, za) | 946 | 50% | 49% | 0.5% |
+| retained — HQ / process ownership (ch, nl, de, gb) | 753 | 40% | 59% | 1.7% |
+| mixed — regional HQ plus nearshore (es, sg) | 411 | 36% | 60% | 3.4% |
+
+India runs 72% transactional; Switzerland runs 81% judgment. The pooled figure
+is therefore partly a statement about which countries were sampled. It is
+reported as a split for that reason, and any single number over the whole basket
+should be read as basket-dependent. Both populations belong in the study — the
+thesis is about the interaction between where transactional work sits and where
+judgment and process ownership sit — but they should not be averaged into one
+claim.
+
+Advisory firms (EY, Deloitte, KPMG, PwC, McKinsey and peers) match the same
+search terms while selling advice about GBS rather than performing it. The 49
+such postings are excluded from every figure above; the classification lives in
+`src/orgtype.py` and is a visible list, not a model.
 
 ### How much of that you can lean on
 
@@ -161,6 +199,7 @@ source-overlap report first.
 |---|---|
 | `src/fetch.py` | source-aware Adzuna/Jooble retrieval, idempotent DuckDB upserts |
 | `src/taxonomy.py` | visible phrases, scoring, tie rule, audit hits |
+| `src/orgtype.py` | captive / BPO / advisory and delivery / retained market lists |
 | `src/classify.py` | taxonomy first, Claude fallback for the residual |
 | `src/analyze.py` | generated report, chart, country and seniority cuts |
 | `src/dashboard.py` | standalone research brief and posting-level audit view |
