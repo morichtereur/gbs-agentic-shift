@@ -33,6 +33,8 @@ SEARCH_TERMS = [
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 CLASSIFIER_MODEL = os.getenv("CLASSIFIER_MODEL", "claude-sonnet-5")
 RECLASSIFY = os.getenv("GBS_RECLASSIFY", "0").lower() in {"1", "true", "yes"}
+MODEL_WORKERS = int(os.getenv("GBS_MODEL_WORKERS", "3"))
+MODEL_REQUEST_INTERVAL = float(os.getenv("GBS_MODEL_REQUEST_INTERVAL", "0.25"))
 
 RESULTS_PER_PAGE = 50
 MAX_PAGES = int(os.getenv("GBS_MAX_PAGES", "5"))  # 5 pages x 50 x terms x countries

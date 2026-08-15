@@ -12,6 +12,9 @@ transparent rule set, not by a model's opinion. The model handles the tail.
 from __future__ import annotations
 
 import json
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import duckdb
 
 from src import config as C
@@ -46,6 +49,29 @@ def _model_label(client, title: str, description: str) -> dict:
         return {"label": "none", "reason": "unparseable model output"}
 
 
+_RATE_LOCK = threading.Lock()
+_NEXT_REQUEST = 0.0
+
+
+def _model_label_safe(title: str, description: str) -> dict:
+    """Call Claude with bounded concurrency and a process-wide request gap."""
+    global _NEXT_REQUEST
+    with _RATE_LOCK:
+        now = time.monotonic()
+        wait = max(0.0, _NEXT_REQUEST - now)
+        _NEXT_REQUEST = max(now, _NEXT_REQUEST) + C.MODEL_REQUEST_INTERVAL
+    if wait:
+        time.sleep(wait)
+
+    try:
+        from anthropic import Anthropic
+        client = Anthropic(api_key=C.ANTHROPIC_API_KEY, timeout=20.0,
+                           max_retries=0)
+        return _model_label(client, title, description)
+    except Exception as exc:
+        return {"label": "none", "reason": f"model request failed: {type(exc).__name__}"}
+
+
 def run() -> None:
     con = duckdb.connect(str(C.DB_PATH))
     con.execute("""
@@ -77,36 +103,47 @@ def run() -> None:
         print("Nothing new to classify.")
         return
 
-    client = None
-    tax_n = model_n = 0
+    tax_rows = []
+    model_tasks = []
     for pid, title, desc in rows:
         r = classify_text(f"{title} {desc}")
         if not r.ambiguous:
-            row = r.to_row()
-            con.execute(
-                "INSERT OR REPLACE INTO labels VALUES (?,?,?,?,?,?,?,?)",
-                [pid, r.label, "taxonomy", row["score_transactional"],
-                 row["score_judgment"], row["score_agent_ops"], row["hits"], ""],
-            )
-            tax_n += 1
+            tax_rows.append((pid, r))
         else:
-            if client is None:
-                from anthropic import Anthropic
-                client = Anthropic(api_key=C.ANTHROPIC_API_KEY, timeout=20.0,
-                                   max_retries=0)
-            try:
-                out = _model_label(client, title, desc)
-            except Exception as exc:
-                out = {"label": "none", "reason": f"model request failed: {type(exc).__name__}"}
-            con.execute(
-                "INSERT OR REPLACE INTO labels VALUES (?,?,?,?,?,?,?,?)",
-                [pid, out["label"], "model", r.scores["transactional"],
-                 r.scores["judgment"], r.scores["agent_ops"], "",
-                 out.get("reason", "")],
-            )
-            model_n += 1
+            model_tasks.append((pid, title, desc, r))
+
+    for pid, r in tax_rows:
+        row = r.to_row()
+        con.execute(
+            "INSERT OR REPLACE INTO labels VALUES (?,?,?,?,?,?,?,?)",
+            [pid, r.label, "taxonomy", row["score_transactional"],
+             row["score_judgment"], row["score_agent_ops"], row["hits"], ""],
+        )
+
+    model_results = {}
+    if model_tasks:
+        workers = max(1, min(C.MODEL_WORKERS, len(model_tasks)))
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            futures = {
+                pool.submit(_model_label_safe, title, desc): (pid, r)
+                for pid, title, desc, r in model_tasks
+            }
+            for future in as_completed(futures):
+                pid, r = futures[future]
+                model_results[pid] = (r, future.result())
+
+    for pid, r in ((pid, r) for pid, _, _, r in model_tasks):
+        tax_result, out = model_results[pid]
+        con.execute(
+            "INSERT OR REPLACE INTO labels VALUES (?,?,?,?,?,?,?,?)",
+            [pid, out["label"], "model", tax_result.scores["transactional"],
+             tax_result.scores["judgment"], tax_result.scores["agent_ops"], "",
+             out.get("reason", "")],
+        )
 
     con.close()
+    tax_n = len(tax_rows)
+    model_n = len(model_tasks)
     print(f"Classified {tax_n} by taxonomy, {model_n} by model "
           f"({model_n / max(tax_n + model_n, 1):.0%} needed the fallback).")
 
