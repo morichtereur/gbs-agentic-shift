@@ -105,6 +105,13 @@ The repository also includes the latest generated snapshot in `RESULTS.md`,
 finding before configuring API keys. These are dated point-in-time outputs, not
 historical data; rerunning the pipeline replaces them with a newer snapshot.
 
+The default comparison set covers Germany, the UK and Netherlands, Poland as a
+Central/Eastern European benchmark, and India, the Philippines, Malaysia, South
+Africa and Costa Rica as established GBS delivery hubs. This is a deliberate
+market sample, not a claim that these countries represent all outsourcing
+activity. Override `GBS_COUNTRIES` when a narrower regional comparison is more
+appropriate.
+
 ## Read the output correctly
 
 - **Family mix:** a distribution of posting classifications, not a measurement

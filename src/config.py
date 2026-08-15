@@ -13,7 +13,11 @@ ADZUNA_APP_ID = os.getenv("ADZUNA_APP_ID", "")
 ADZUNA_APP_KEY = os.getenv("ADZUNA_APP_KEY", "")
 
 # Countries to pull. Adzuna uses ISO-ish codes: de, gb, us, fr, ...
-COUNTRIES = os.getenv("GBS_COUNTRIES", "de,gb,nl,pl").split(",")
+# Comparison set: Western Europe, Central/Eastern Europe, and established
+# global GBS delivery hubs. Keep the set explicit so geography is reproducible.
+COUNTRIES = os.getenv(
+    "GBS_COUNTRIES", "de,gb,nl,pl,in,ph,my,za,cr"
+).split(",")
 
 # Search terms that surface GBS / finance-operations postings.
 SEARCH_TERMS = [
