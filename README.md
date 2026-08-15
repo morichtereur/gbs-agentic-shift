@@ -80,10 +80,24 @@ For a small smoke run, set `GBS_MAX_PAGES=1`; the default is five pages per
 search term and country. API keys are read only from the environment and must
 never be committed.
 
+Set `GBS_RECLASSIFY=1` when the taxonomy changes and an existing DuckDB run
+needs to be classified again. The default `0` keeps normal runs idempotent.
+
 `make all` writes `RESULTS.md` (generated from the run, never hand-edited) and a
 single-file `dashboard.html` you can open in a browser and hand to a colleague —
 filter by family, country, or free-text search, export visible rows as CSV, and
 every row shows why it landed there.
+
+To create a balanced annotation worksheet from a completed local run:
+
+```bash
+.venv/bin/python -m eval.build_gold_template
+```
+
+Read each posting and fill its empty `gold` value with exactly one of
+`transactional`, `judgment`, or `agent_ops`. Copy the completed worksheet to
+`eval/labels.jsonl`, then run `make eval`. The template uses existing labels
+only to balance the sample; it does not copy them into the gold set.
 
 The repository also includes the latest generated snapshot in `RESULTS.md`,
 `dashboard.html`, and `data/chart_mix.png`, so a reviewer can see an actual

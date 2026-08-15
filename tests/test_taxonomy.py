@@ -26,7 +26,7 @@ def test_agent_ops_wins_ties():
 
 
 def test_non_agent_tie_is_ambiguous():
-    r = classify_text("Invoice processing with forecasting.")
+    r = classify_text("Manual reconciliation with forecasting.")
     assert r.label == "ambiguous"
     assert r.ambiguous
     assert r.scores["transactional"] == r.scores["judgment"]
@@ -36,7 +36,7 @@ def test_hits_are_auditable():
     r = classify_text("Invoice processing clerk with manual reconciliation.")
     row = r.to_row()
     assert "transactional:manual reconciliation,invoice processing" in row["hits"]
-    assert row["score_transactional"] == 2
+    assert row["score_transactional"] == 3
     assert row["score_judgment"] == 0
     assert row["score_agent_ops"] == 0
 

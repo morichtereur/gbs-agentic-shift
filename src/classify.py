@@ -61,12 +61,17 @@ def run() -> None:
         )
     """)
 
-    rows = con.execute(
-        """SELECT p.id, p.title, p.description
-           FROM postings p
-           LEFT JOIN labels l ON p.id = l.id
-           WHERE l.id IS NULL"""
-    ).fetchall()
+    if C.RECLASSIFY:
+        rows = con.execute(
+            "SELECT id, title, description FROM postings ORDER BY id"
+        ).fetchall()
+    else:
+        rows = con.execute(
+            """SELECT p.id, p.title, p.description
+               FROM postings p
+               LEFT JOIN labels l ON p.id = l.id
+               WHERE l.id IS NULL"""
+        ).fetchall()
 
     if not rows:
         print("Nothing new to classify.")
@@ -87,8 +92,8 @@ def run() -> None:
         else:
             if client is None:
                 from anthropic import Anthropic
-                client = Anthropic(api_key=C.ANTHROPIC_API_KEY, timeout=30.0,
-                                   max_retries=1)
+                client = Anthropic(api_key=C.ANTHROPIC_API_KEY, timeout=20.0,
+                                   max_retries=0)
             try:
                 out = _model_label(client, title, desc)
             except Exception as exc:
