@@ -77,8 +77,9 @@ make test
 ```
 
 For a small smoke run, set `GBS_MAX_PAGES=1`; the default is five pages per
-search term and country. API keys are read only from the environment and must
-never be committed.
+search term and country. The default country set is `de,gb,nl,pl`; override it
+with `GBS_COUNTRIES` when you want a narrower comparison. API keys are read
+only from the environment and must never be committed.
 
 Set `GBS_RECLASSIFY=1` when the taxonomy changes and an existing DuckDB run
 needs to be classified again. The default `0` keeps normal runs idempotent.
