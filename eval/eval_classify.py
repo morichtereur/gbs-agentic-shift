@@ -24,7 +24,7 @@ from src.taxonomy import classify_text
 HERE = Path(__file__).resolve().parent
 GOLD = HERE / "labels.jsonl"
 SAMPLE = HERE / "labels.sample.jsonl"
-FAMILIES = ["transactional", "judgment", "agent_ops"]
+FAMILIES = ["transactional", "judgment", "agent_ops", "none"]
 
 
 def load(path: Path) -> list[dict]:

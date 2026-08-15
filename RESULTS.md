@@ -2,7 +2,7 @@
 
 **Generated:** 2026-08-15  **Scope:** live Adzuna postings, point-in-time cross-section
 
-Cross-section of **1445** live GBS / finance-operations postings (de, gb, nl, pl, in, za), pulled from Adzuna. Point-in-time, not a trend.
+Cross-section of **1445** live GBS / finance-operations postings (adzuna/de, adzuna/gb, adzuna/in, adzuna/nl, adzuna/pl, adzuna/za), pulled from the sources shown. Point-in-time, not a trend.
 
 ## Family mix
 
@@ -27,29 +27,31 @@ Cross-section of **1445** live GBS / finance-operations postings (de, gb, nl, pl
 - 1083 labelled by the deterministic taxonomy, 362 by the Claude fallback.
 - Claude fallback share among included postings: 25%.
 - 165 postings were labelled `none` and excluded from the family mix.
+- Taxonomy gold-set accuracy: 66.7% (n=60).
+- Gold-set agent_ops recall: 42.9%; the agent_ops share should be treated as a lower-bound signal until recall improves.
 
 ## Country cut
 
-| country | family | postings |
+| source / country | family | postings |
 |---|---|---|
-| de | judgment | 157 |
-| de | transactional | 76 |
-| de | agent_ops | 9 |
-| gb | transactional | 143 |
-| gb | judgment | 127 |
-| gb | agent_ops | 1 |
-| in | transactional | 198 |
-| in | judgment | 76 |
-| in | agent_ops | 1 |
-| nl | judgment | 93 |
-| nl | transactional | 63 |
-| nl | agent_ops | 1 |
-| pl | judgment | 167 |
-| pl | transactional | 110 |
-| pl | agent_ops | 1 |
-| za | judgment | 141 |
-| za | transactional | 80 |
-| za | agent_ops | 1 |
+| adzuna / de | judgment | 157 |
+| adzuna / de | transactional | 76 |
+| adzuna / de | agent_ops | 9 |
+| adzuna / gb | transactional | 143 |
+| adzuna / gb | judgment | 127 |
+| adzuna / gb | agent_ops | 1 |
+| adzuna / in | transactional | 198 |
+| adzuna / in | judgment | 76 |
+| adzuna / in | agent_ops | 1 |
+| adzuna / nl | judgment | 93 |
+| adzuna / nl | transactional | 63 |
+| adzuna / nl | agent_ops | 1 |
+| adzuna / pl | judgment | 167 |
+| adzuna / pl | transactional | 110 |
+| adzuna / pl | agent_ops | 1 |
+| adzuna / za | judgment | 141 |
+| adzuna / za | transactional | 80 |
+| adzuna / za | agent_ops | 1 |
 
-- Taxonomy accuracy against the hand-labelled gold set: run `python -m eval.eval_classify`.
+- Gold-set detail: `python -m eval.eval_classify` prints the confusion matrix and per-family metrics.
 - Seniority is inferred from title keywords only — treat as directional.

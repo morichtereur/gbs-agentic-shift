@@ -109,6 +109,11 @@ The current committed snapshot is the last complete Adzuna-only run. Jooble
 integration is implemented, but its freshly requested key currently returns
 `403 Forbidden`, so no Jooble rows are silently treated as zero demand.
 
+The committed 60-posting gold set currently scores the taxonomy at **66.7%
+accuracy**; `agent_ops` precision is **100%**, but recall is only **42.9%**.
+That recall is reported because a low observed `agent_ops` share is otherwise
+easy to mistake for proof that the market has no agent-ops demand.
+
 The current 12-market design is source-specific: Adzuna covers `PL`, `IN`,
 `MX`, `NL`, `DE`, `CH`, `ES`, and `SG`; Jooble covers `PT`, `RO`, `HU`, and
 `CZ`. These are a deliberate comparison sample, not a claim that they represent
@@ -154,6 +159,11 @@ Adzuna and Jooble search APIs — no scraping.
 - **Coverage varies by source and market.** The twelve markets are split
   deliberately across Adzuna and Jooble; an unavailable source is not counted
   as zero demand.
+- **Language bias.** The taxonomy is strongest in English and German. Polish
+  finance and automation phrases are now included, but PL recall still needs
+  a larger Polish gold set before country-level agent_ops comparisons are
+  treated as robust. A low PL count may be a language artifact, not a market
+  finding.
 - **Seniority is title-inferred** — a crude keyword split, directional only.
 - **The taxonomy is a construct.** Its accuracy is reported, not claimed; read
   the eval before trusting the mix.

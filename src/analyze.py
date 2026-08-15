@@ -14,6 +14,7 @@ Two cuts, both aimed at McKinsey's thesis:
 from __future__ import annotations
 
 import re
+import json
 from datetime import datetime, timezone
 import duckdb
 import matplotlib
@@ -21,6 +22,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 from src import config as C
+from src.taxonomy import classify_text
 
 SENIOR = re.compile(r"(?i)\b(senior|lead|manager|head|principal|director|vp)\b")
 JUNIOR = re.compile(r"(?i)\b(junior|graduate|entry|trainee|apprentice|intern|clerk|assistant)\b")
@@ -32,6 +34,20 @@ def _seniority(title: str) -> str:
     if JUNIOR.search(title):
         return "junior"
     return "mid/unknown"
+
+
+def _gold_metrics() -> tuple[float, float] | None:
+    gold_path = C.ROOT / "eval" / "labels.jsonl"
+    if not gold_path.exists():
+        return None
+    rows = [json.loads(line) for line in gold_path.read_text().splitlines() if line.strip()]
+    if not rows:
+        return None
+    predictions = [classify_text(row["text"]).label for row in rows]
+    accuracy = sum(pred == row["gold"] for pred, row in zip(predictions, rows)) / len(rows)
+    agent_rows = [(pred, row["gold"]) for pred, row in zip(predictions, rows) if row["gold"] == "agent_ops"]
+    agent_recall = sum(pred == "agent_ops" for pred, _ in agent_rows) / len(agent_rows) if agent_rows else 0
+    return accuracy, agent_recall
 
 
 def run() -> None:
@@ -71,10 +87,18 @@ def run() -> None:
     src = con.execute("""
         SELECT source, count(*) FROM labels WHERE label != 'none' GROUP BY source
     """).fetchall()
+    observed = con.execute("""
+        SELECT p.source, p.country, count(*)
+        FROM postings p JOIN labels l ON p.id = l.id
+        WHERE l.label != 'none'
+        GROUP BY p.source, p.country
+        ORDER BY p.source, p.country
+    """).fetchall()
     excluded = con.execute(
         "SELECT count(*) FROM labels WHERE label = 'none'"
     ).fetchone()[0]
     con.close()
+    gold_metrics = _gold_metrics()
 
     # ---- chart ----
     labels_order = ["transactional", "judgment", "agent_ops"]
@@ -105,7 +129,8 @@ def run() -> None:
         "**Scope:** live Adzuna postings, point-in-time cross-section",
         "",
         f"Cross-section of **{total}** live GBS / finance-operations postings "
-        f"({', '.join(C.COUNTRIES)}), pulled from Adzuna and Jooble. Point-in-time, not a trend.",
+        f"({', '.join(f'{source}/{country}' for source, country, _ in observed)}), "
+        "pulled from the sources shown. Point-in-time, not a trend.",
         "",
         "## Family mix",
         "",
@@ -135,6 +160,14 @@ def run() -> None:
         f"{dict(src).get('model',0)} by the Claude fallback.",
         f"- Claude fallback share among included postings: {dict(src).get('model',0)/total:.0%}.",
         f"- {excluded} postings were labelled `none` and excluded from the family mix.",
+    ]
+    if gold_metrics:
+        accuracy, agent_recall = gold_metrics
+        lines += [
+            f"- Taxonomy gold-set accuracy: {accuracy:.1%} (n=60).",
+            f"- Gold-set agent_ops recall: {agent_recall:.1%}; the agent_ops share should be treated as a lower-bound signal until recall improves.",
+        ]
+    lines += [
         "",
         "## Country cut",
         "",
@@ -146,7 +179,7 @@ def run() -> None:
         lines.append(f"| {source_name} / {country} | {label} | {n} |")
     lines += [
         "",
-        "- Taxonomy accuracy against the hand-labelled gold set: run `python -m eval.eval_classify`.",
+        "- Gold-set detail: `python -m eval.eval_classify` prints the confusion matrix and per-family metrics.",
         "- Seniority is inferred from title keywords only — treat as directional.",
     ]
     (C.ROOT / "RESULTS.md").write_text("\n".join(lines) + "\n")

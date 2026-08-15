@@ -47,6 +47,8 @@ FAMILIES: Dict[str, List[str]] = {
         "order to cash operations", "r2r analyst", "procure-to-pay specialist",
         "billing supervisor", "billing", "arrears recovery", "accounting shared services",
         "working student", "werkstudent", "associate",
+        "księgowość", "faktury", "należności", "zobowiązania", "uzgodnienia",
+        "księgowy", "księgowa", "raportowanie finansowe", "zamknięcie miesiąca",
     ],
     "judgment": [
         "fp&a", "financial planning and analysis", "forecasting", "scenario planning",
@@ -69,6 +71,8 @@ FAMILIES: Dict[str, List[str]] = {
         "projektmanager", "director of finance", "head of finance", "finance lead",
         "team lead finance", "teamleiter finance", "shared services lead", "director",
         "project", "consultant",
+        "controlling finansowy", "analiza danych", "raportowanie", "planowanie finansowe",
+        "transformacja finansów", "optymalizacja procesów", "doradztwo finansowe",
     ],
     "agent_ops": [
         "agent orchestration", "orchestrate agents", "agentic", "ai agent", "ai agents",
@@ -80,6 +84,8 @@ FAMILIES: Dict[str, List[str]] = {
         "process automation", "workflow automation", "automation engineer", "automation strategy",
         "automation platform", "rpa", "rpa automation", "ai automation",
         "sap ai", "autonomous finance", "smart automation",
+        "automatyzacja", "automatyzacja procesów", "robotyzacja", "sztuczna inteligencja",
+        "uczenie maszynowe", "agenci ai", "orkiestracja agentów",
     ],
 }
 
