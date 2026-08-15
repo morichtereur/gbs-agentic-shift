@@ -1,0 +1,5 @@
+requests>=2.31
+duckdb>=0.10
+anthropic>=0.39
+matplotlib>=3.8
+pytest>=8.0
