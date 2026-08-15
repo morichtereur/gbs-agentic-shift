@@ -85,6 +85,10 @@ must never be committed.
 Set `GBS_RECLASSIFY=1` when the taxonomy changes and an existing DuckDB run
 needs to be classified again. The default `0` keeps normal runs idempotent.
 
+After editing deterministic phrases, use `make refresh-taxonomy` to update all
+clear labels without making Claude calls. Existing model labels are preserved
+only where the revised taxonomy remains ambiguous.
+
 `make all` writes `RESULTS.md` (generated from the run, never hand-edited) and a
 single-file `dashboard.html` you can open in a browser and hand to a colleague —
 filter by family, country, or free-text search, export visible rows as CSV, and

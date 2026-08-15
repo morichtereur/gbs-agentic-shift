@@ -97,6 +97,11 @@ def run() -> None:
     excluded = con.execute(
         "SELECT count(*) FROM labels WHERE label = 'none'"
     ).fetchone()[0]
+    unlabeled = con.execute("""
+        SELECT count(*) FROM postings p
+        LEFT JOIN labels l ON p.id = l.id
+        WHERE l.id IS NULL
+    """).fetchone()[0]
     con.close()
     gold_metrics = _gold_metrics()
     audit_path = C.ROOT / "eval" / "agent_ops_audit.jsonl"
@@ -135,7 +140,7 @@ def run() -> None:
         f"**Generated:** {datetime.now(timezone.utc).date().isoformat()}  "
         "**Scope:** live Adzuna postings, point-in-time cross-section",
         "",
-        f"Cross-section of **{total}** live GBS / finance-operations postings "
+        f"Cross-section of **{total}** labelled live GBS / finance-operations postings "
         f"({', '.join(f'{source}/{country}' for source, country, _ in observed)}), "
         "pulled from the sources shown. Point-in-time, not a trend.",
         "",
@@ -167,6 +172,7 @@ def run() -> None:
         f"{dict(src).get('model',0)} by the Claude fallback.",
         f"- Claude fallback share among included postings: {dict(src).get('model',0)/total:.0%}.",
         f"- {excluded} postings were labelled `none` and excluded from the family mix.",
+        f"- {unlabeled} fetched postings remain unlabelled and are excluded from this report.",
         f"- Agent-ops audit: {audit_counts.get('true', 0)} clear, "
         f"{audit_counts.get('borderline', 0)} borderline, "
         f"{audit_counts.get('false', 0)} likely false positives, "

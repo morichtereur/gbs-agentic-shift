@@ -1,8 +1,9 @@
-.PHONY: install fetch classify analyze dashboard eval gold-country eval-country test all
+.PHONY: install fetch classify analyze dashboard refresh-taxonomy eval gold-country eval-country test all
 
 install:  ; pip install -r requirements.txt
 fetch:    ; python -m src.fetch
 classify: ; python -m src.classify
+refresh-taxonomy: ; python -m src.refresh_taxonomy
 analyze:  ; python -m src.analyze
 dashboard:; python -m src.dashboard
 eval:     ; python -m eval.eval_classify
