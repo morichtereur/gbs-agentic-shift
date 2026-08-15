@@ -25,22 +25,33 @@ def run() -> None:
         """
         WITH ranked AS (
             SELECT p.id, p.country, p.title, p.description,
+                   l.label,
                    row_number() OVER (
-                       PARTITION BY p.country ORDER BY md5(p.id)
+                       PARTITION BY p.country, (l.label = 'agent_ops')
+                       ORDER BY md5(p.id)
                    ) AS sample_rank
             FROM postings p
             JOIN labels l ON l.id = p.id
             WHERE p.country IN ('de', 'gb', 'in', 'nl', 'pl', 'za')
               AND l.label != 'none'
         )
-        SELECT id, country, title, description
+        SELECT id, country, title, description, label
         FROM ranked
         WHERE sample_rank <= ?
-        ORDER BY country, id
+        ORDER BY country, (label = 'agent_ops') DESC, id
         """,
         [PER_COUNTRY],
     ).fetchall()
     con.close()
+
+    selected = []
+    by_country = {}
+    for row in rows:
+        by_country.setdefault(row[1], []).append(row)
+    for country in COUNTRIES:
+        candidates = by_country.get(country, [])
+        selected.extend(candidates[:PER_COUNTRY])
+    selected = selected[:PER_COUNTRY * len(COUNTRIES)]
 
     OUT.write_text(
         "\n".join(
@@ -49,11 +60,11 @@ def run() -> None:
                  "text": f"{title} {description}", "gold": ""},
                 ensure_ascii=True,
             )
-            for pid, country, title, description in rows
+            for pid, country, title, description, _ in selected
         )
         + "\n"
     )
-    print(f"Wrote {OUT} ({len(rows)} unlabeled postings).")
+    print(f"Wrote {OUT} ({len(selected)} unlabeled postings).")
     print("Fill gold with transactional, judgment, agent_ops, or none.")
     print("Then copy to eval/labels_country.jsonl and evaluate it separately.")
 
