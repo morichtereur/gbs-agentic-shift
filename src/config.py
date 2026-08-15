@@ -16,7 +16,7 @@ ADZUNA_APP_KEY = os.getenv("ADZUNA_APP_KEY", "")
 # Comparison set: Western Europe, Central/Eastern Europe, and established
 # global GBS delivery hubs. Keep the set explicit so geography is reproducible.
 COUNTRIES = os.getenv(
-    "GBS_COUNTRIES", "de,gb,nl,pl,in,ph,my,za,cr"
+    "GBS_COUNTRIES", "de,gb,nl,pl,in,za"
 ).split(",")
 
 # Search terms that surface GBS / finance-operations postings.
