@@ -32,6 +32,7 @@ Cross-section of **2159** labelled live GBS / finance-operations postings (adzun
 - Taxonomy gold-set accuracy: 66.7% (n=60).
 - Gold-set agent_ops recall: 42.9%; the agent_ops share should be treated as a lower-bound signal until recall improves.
 - Confidence split: agent_ops precision is strong, but the transactional-vs-judgment mix is exploratory at 66.7% overall accuracy.
+- Sensitivity illustration: correcting the observed 33 agent_ops labels for the measured recall gives approximately 3.6%; this is an upper-bound diagnostic, not a new point estimate.
 
 ## Country cut
 

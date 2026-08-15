@@ -140,6 +140,12 @@ accuracy**; `agent_ops` precision is **100%**, but recall is only **42.9%**.
 That recall is reported because a low observed `agent_ops` share is otherwise
 easy to mistake for proof that the market has no agent-ops demand.
 
+The practical sensitivity check is still small: `33` observed agent_ops labels
+out of `2,159` relevant postings is about `1.5%`. If the measured `42.9%`
+recall missed a similar share of true positives, the implied share would be
+roughly `3.6%`, or about `4%`. That is an upper-bound illustration, not a new
+estimate, but even that correction leaves agent_ops marginal in this snapshot.
+
 The latest diagnostic run reaches `100%` agent_ops recall in the DE, IN, NL,
 and PL slices, but the overall country-set accuracy is only `60%`. This is a
 debugging signal for taxonomy work, not a country ranking or a market estimate.
@@ -162,6 +168,10 @@ This keeps a source outage from being mistaken for weak hiring demand.
   only `42.9%`, so a low agent-ops share is a lower bound. The
   transactional-vs-judgment split is exploratory because overall accuracy is
   only `66.7%`.
+- **Do not headline the family split.** The `transactional`/`judgment`
+  distribution is exploratory at current accuracy; the defensible headline is
+  that detected agent_ops demand is small, with recall reported and sensitivity
+  shown rather than hidden.
 - **Fallback share:** how much of the run was not decided by the visible rules;
   a high share is evidence to improve the taxonomy before making a strong claim.
 - **Agent-ops share:** a narrow construct for roles involving AI or automation

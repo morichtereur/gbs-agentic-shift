@@ -180,10 +180,13 @@ def run() -> None:
     ]
     if gold_metrics:
         accuracy, agent_recall = gold_metrics
+        observed_agent = counts.get("agent_ops", 0)
+        adjusted_agent = observed_agent / agent_recall / total if agent_recall else 0
         lines += [
             f"- Taxonomy gold-set accuracy: {accuracy:.1%} (n=60).",
             f"- Gold-set agent_ops recall: {agent_recall:.1%}; the agent_ops share should be treated as a lower-bound signal until recall improves.",
                 f"- Confidence split: agent_ops precision is strong, but the transactional-vs-judgment mix is exploratory at {accuracy:.1%} overall accuracy.",
+            f"- Sensitivity illustration: correcting the observed {observed_agent} agent_ops labels for the measured recall gives approximately {adjusted_agent:.1%}; this is an upper-bound diagnostic, not a new point estimate.",
         ]
     lines += [
         "",
