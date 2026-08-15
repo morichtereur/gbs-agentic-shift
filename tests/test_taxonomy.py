@@ -51,3 +51,9 @@ def test_word_boundary_no_false_ai_match():
     # "email" must not trigger the "ai" family via substring.
     r = classify_text("Coordinate email correspondence and calendar invites.")
     assert r.scores["agent_ops"] == 0
+
+
+def test_polish_automation_signal():
+    r = classify_text("Analityk automatyzacji procesów finansowych i robotyzacji.")
+    assert r.label == "agent_ops"
+    assert "automatyzacji procesów" in r.hits["agent_ops"]

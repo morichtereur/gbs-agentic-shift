@@ -84,7 +84,8 @@ FAMILIES: Dict[str, List[str]] = {
         "process automation", "workflow automation", "automation engineer", "automation strategy",
         "automation platform", "rpa", "rpa automation", "ai automation",
         "sap ai", "autonomous finance", "smart automation",
-        "automatyzacja", "automatyzacja procesów", "robotyzacja", "sztuczna inteligencja",
+        "automatyzacja", "automatyzacji", "automatyzacja procesów", "automatyzacji procesów",
+        "robotyzacja", "robotyzacji", "sztuczna inteligencja",
         "uczenie maszynowe", "agenci ai", "orkiestracja agentów",
     ],
 }

@@ -7,7 +7,7 @@ accuracy plus per-family precision/recall so you can see WHERE it's weak
 (usually: judgment vs agent_ops overlap).
 
 Gold set format (JSONL), one posting per line:
-    {"text": "<title + description>", "gold": "transactional|judgment|agent_ops"}
+    {"text": "<title + description>", "gold": "transactional|judgment|agent_ops|none"}
 
 Start from eval/labels.sample.jsonl, then replace it with your own hand labels
 (aim for >=60 postings, balanced across families) as eval/labels.jsonl.

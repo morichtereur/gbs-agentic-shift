@@ -146,6 +146,7 @@ This keeps a source outage from being mistaken for weak hiring demand.
 | `src/analyze.py` | generated report, chart, country and seniority cuts |
 | `src/dashboard.py` | standalone research brief and posting-level audit view |
 | `eval/eval_classify.py` | gold-set metrics and confusion matrix |
+| `eval/agent_ops_audit.jsonl` | manual review of every current agent_ops row |
 | `tests/` | deterministic behaviour checks with no API calls |
 
 ## Stack

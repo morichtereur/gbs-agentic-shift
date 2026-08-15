@@ -99,6 +99,13 @@ def run() -> None:
     ).fetchone()[0]
     con.close()
     gold_metrics = _gold_metrics()
+    audit_path = C.ROOT / "eval" / "agent_ops_audit.jsonl"
+    audit_rows = []
+    if audit_path.exists():
+        audit_rows = [json.loads(line) for line in audit_path.read_text().splitlines() if line.strip()]
+    audit_counts = {}
+    for row in audit_rows:
+        audit_counts[row["audit"]] = audit_counts.get(row["audit"], 0) + 1
 
     # ---- chart ----
     labels_order = ["transactional", "judgment", "agent_ops"]
@@ -160,6 +167,10 @@ def run() -> None:
         f"{dict(src).get('model',0)} by the Claude fallback.",
         f"- Claude fallback share among included postings: {dict(src).get('model',0)/total:.0%}.",
         f"- {excluded} postings were labelled `none` and excluded from the family mix.",
+        f"- Agent-ops audit: {audit_counts.get('true', 0)} clear, "
+        f"{audit_counts.get('borderline', 0)} borderline, "
+        f"{audit_counts.get('false', 0)} likely false positives, "
+        f"{audit_counts.get('duplicate', 0)} duplicate rows.",
     ]
     if gold_metrics:
         accuracy, agent_recall = gold_metrics

@@ -27,6 +27,7 @@ Cross-section of **1445** live GBS / finance-operations postings (adzuna/de, adz
 - 1083 labelled by the deterministic taxonomy, 362 by the Claude fallback.
 - Claude fallback share among included postings: 25%.
 - 165 postings were labelled `none` and excluded from the family mix.
+- Agent-ops audit: 4 clear, 4 borderline, 3 likely false positives, 3 duplicate rows.
 - Taxonomy gold-set accuracy: 66.7% (n=60).
 - Gold-set agent_ops recall: 42.9%; the agent_ops share should be treated as a lower-bound signal until recall improves.
 
