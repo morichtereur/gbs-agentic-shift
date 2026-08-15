@@ -4,7 +4,7 @@
 
 ![Python](https://img.shields.io/badge/Python-3.11%2B-14213d?style=flat-square)
 ![Method](https://img.shields.io/badge/headline-deterministic%20taxonomy-f4b942?style=flat-square)
-![Data](https://img.shields.io/badge/data-Adzuna%20Search%20API-2f8f83?style=flat-square)
+![Data](https://img.shields.io/badge/data-Adzuna%20%2B%20Jooble-2f8f83?style=flat-square)
 
 > What is the current GBS hiring market asking people to do: execute, exercise
 > judgement, or manage the agent force?
@@ -37,12 +37,13 @@ footnote.
 
 ## What it does not claim
 
-This is a **point-in-time cross-section, not a trend.** The Adzuna search API
-returns current live postings only — it cannot see 2023, so it cannot draw the
-pyramid-to-diamond line over time. What it can answer is the honest first
-question: *right now, how much of the GBS hiring market is already asking for
-agent-ops skills, and how thin is the transactional base?* The trend version
-needs a second, historical source and is left as a stated v2, not faked here.
+This is a **point-in-time cross-section, not a trend.** The Adzuna and Jooble
+search APIs return current live postings only — they cannot see 2023, so they
+cannot draw the pyramid-to-diamond line over time. What the project can answer
+is the honest first question: *right now, how much of the GBS hiring market is
+already asking for agent-ops skills, and how thin is the transactional base?*
+The trend version needs a historical source and is left as a stated v2, not
+faked here.
 
 ## Method
 
@@ -69,7 +70,7 @@ be lower, especially on judgment-vs-agent_ops overlap.
 ## Run it
 
 ```bash
-cp .env.example .env      # add ADZUNA_APP_ID / KEY and ANTHROPIC_API_KEY
+cp .env.example .env      # add Adzuna, Jooble and Anthropic keys
 make install
 make all                  # fetch -> classify -> analyze -> dashboard
 make eval                 # taxonomy accuracy vs gold set
@@ -77,9 +78,9 @@ make test
 ```
 
 For a small smoke run, set `GBS_MAX_PAGES=1`; the default is five pages per
-search term and country. The default country set is `de,gb,nl,pl`; override it
-with `GBS_COUNTRIES` when you want a narrower comparison. API keys are read
-only from the environment and must never be committed.
+search term and country. Override `ADZUNA_COUNTRIES` or `JOOBLE_COUNTRIES` when
+you want a narrower comparison. API keys are read only from the environment and
+must never be committed.
 
 Set `GBS_RECLASSIFY=1` when the taxonomy changes and an existing DuckDB run
 needs to be classified again. The default `0` keeps normal runs idempotent.
@@ -100,10 +101,13 @@ Read each posting and fill its empty `gold` value with exactly one of
 `eval/labels.jsonl`, then run `make eval`. The template uses existing labels
 only to balance the sample; it does not copy them into the gold set.
 
-The repository also includes the latest generated snapshot in `RESULTS.md`,
+The repository includes a committed generated snapshot in `RESULTS.md`,
 `dashboard.html`, and `data/chart_mix.png`, so a reviewer can see an actual
 finding before configuring API keys. These are dated point-in-time outputs, not
 historical data; rerunning the pipeline replaces them with a newer snapshot.
+The current committed snapshot is the last complete Adzuna-only run. Jooble
+integration is implemented, but its freshly requested key currently returns
+`403 Forbidden`, so no Jooble rows are silently treated as zero demand.
 
 The current 12-market design is source-specific: Adzuna covers `PL`, `IN`,
 `MX`, `NL`, `DE`, `CH`, `ES`, and `SG`; Jooble covers `PT`, `RO`, `HU`, and
@@ -131,7 +135,7 @@ This keeps a source outage from being mistaken for weak hiring demand.
 
 | path | responsibility |
 |---|---|
-| `src/fetch.py` | keyed Adzuna retrieval and idempotent DuckDB upserts |
+| `src/fetch.py` | source-aware Adzuna/Jooble retrieval and idempotent DuckDB upserts |
 | `src/taxonomy.py` | visible phrases, scoring, tie rule, audit hits |
 | `src/classify.py` | taxonomy first; Claude fallback for the residual |
 | `src/analyze.py` | generated report, chart, country and seniority cuts |
@@ -141,14 +145,15 @@ This keeps a source outage from being mistaken for weak hiring demand.
 
 ## Stack
 
-`Python` · `DuckDB` · `Claude API` · `matplotlib` · `pytest`. Data via the
-Adzuna API — a keyed, legal job-search endpoint, no scraping.
+`Python` · `DuckDB` · `Claude API` · `matplotlib` · `pytest`. Data via keyed
+Adzuna and Jooble search APIs — no scraping.
 
 ## Limitations, stated plainly
 
 - **Cross-section, not trend** (above). The headline is a snapshot.
-- **CH coverage is thin.** Adzuna is strong on DE/UK; much of the Swiss
-  mid-market isn't in it. Defaults to `de,gb` for that reason.
+- **Coverage varies by source and market.** The twelve markets are split
+  deliberately across Adzuna and Jooble; an unavailable source is not counted
+  as zero demand.
 - **Seniority is title-inferred** — a crude keyword split, directional only.
 - **The taxonomy is a construct.** Its accuracy is reported, not claimed; read
   the eval before trusting the mix.
@@ -160,3 +165,6 @@ Adzuna API — a keyed, legal job-search endpoint, no scraping.
 - **Fallback quality is a separate risk.** Claude reasons are logged for
   auditability, but the fallback itself needs a labelled evaluation set before
   it should be treated as ground truth.
+- **Cross-source overlap.** Adzuna and Jooble are aggregators, not independent
+  censuses. A future combined headline needs URL/title/company deduplication and
+  a source-overlap report before pooled counts should be interpreted.
