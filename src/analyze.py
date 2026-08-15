@@ -115,22 +115,39 @@ def run() -> None:
     # ---- chart ----
     labels_order = ["transactional", "judgment", "agent_ops"]
     counts = {l: n for l, n in mix}
-    vals = [counts.get(l, 0) for l in labels_order]
-    fig, ax = plt.subplots(figsize=(7, 4), facecolor="#f5f1e8")
-    ax.set_facecolor("#f5f1e8")
-    ax.bar(labels_order, vals, color=["#6f7d8c", "#14213d", "#2f8f83"])
-    ax.set_ylabel("postings", color="#475467")
-    ax.set_title(f"GBS posting mix / point-in-time / n={total}", loc="left", color="#14213d")
-    ax.spines[["top", "right", "left"]].set_visible(False)
-    ax.spines["bottom"].set_color("#d9d5ca")
-    ax.tick_params(axis="both", colors="#667085", length=0)
-    ax.grid(axis="y", color="#d9d5ca", linewidth=0.7)
-    ax.set_axisbelow(True)
-    for i, v in enumerate(vals):
-        ax.text(i, v, f"{v}\n{v/total:.0%}", ha="center", va="bottom", fontsize=9)
+    colors = {"transactional": "#8c8c8c", "judgment": "#3b6ea5", "agent_ops": "#c65b2e"}
+    fig, ax = plt.subplots(figsize=(10, 3.4))
+    fig.patch.set_facecolor("white")
+    left = 0
+    for name in labels_order:
+        share = counts.get(name, 0) / total
+        ax.barh(0, share, left=left, color=colors[name], height=0.55,
+                edgecolor="white", linewidth=1.5)
+        if share > 0.06:
+            ax.text(left + share / 2, 0, f"{name}\n{share:.0%}", ha="center",
+                    va="center", color="white", fontsize=13, fontweight="bold")
+        left += share
+    agent_share = counts.get("agent_ops", 0) / total
+    ax.annotate(
+        f"agent-ops\n{agent_share:.0%}",
+        xy=(1 - agent_share / 2, 0.28), xytext=(0.92, 0.85),
+        ha="center", fontsize=12, fontweight="bold", color="#c65b2e",
+        arrowprops=dict(arrowstyle="-", color="#c65b2e", lw=1.3),
+    )
+    ax.set_xlim(0, 1)
+    ax.set_ylim(-0.5, 1.1)
+    ax.axis("off")
+    ax.text(0, 1.02, "What GBS job postings actually ask people to do", fontsize=16,
+            fontweight="bold", transform=ax.get_yaxis_transform(), ha="left", va="bottom")
+    observed_market_count = len({(source, country) for source, country, _ in observed})
+    ax.text(0, 0.86, f"{total:,} live postings · {observed_market_count} observed markets · point-in-time cross-section",
+            fontsize=11, color="#555", transform=ax.get_yaxis_transform(), ha="left", va="bottom")
+    ax.text(0, -0.42, 'McKinsey predicts a new "agent force" layer. In current hiring it is '
+            f"{agent_share:.0%}.", fontsize=11.5, color="#222",
+            transform=ax.get_yaxis_transform(), ha="left", va="top", style="italic")
     fig.tight_layout()
     (C.DATA / "chart_mix.png").unlink(missing_ok=True)
-    fig.savefig(C.DATA / "chart_mix.png", dpi=130)
+    fig.savefig(C.DATA / "chart_mix.png", dpi=170, bbox_inches="tight", facecolor="white")
 
     # ---- RESULTS.md ----
     def pct(n): return f"{n} ({n/total:.0%})"
