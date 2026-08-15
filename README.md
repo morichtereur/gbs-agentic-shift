@@ -4,7 +4,7 @@
 
 ![Python](https://img.shields.io/badge/Python-3.11%2B-14213d?style=flat-square)
 ![Method](https://img.shields.io/badge/headline-deterministic%20taxonomy-f4b942?style=flat-square)
-![Data](https://img.shields.io/badge/data-Adzuna%20%2B%20Jooble-2f8f83?style=flat-square)
+![Data](https://img.shields.io/badge/data-Adzuna%20(snapshot)%20%7C%20Jooble%20pending-2f8f83?style=flat-square)
 
 > What is the current GBS hiring market asking people to do: execute, exercise
 > judgement, or manage the agent force?
@@ -37,13 +37,14 @@ footnote.
 
 ## What it does not claim
 
-This is a **point-in-time cross-section, not a trend.** The Adzuna and Jooble
-search APIs return current live postings only — they cannot see 2023, so they
-cannot draw the pyramid-to-diamond line over time. What the project can answer
-is the honest first question: *right now, how much of the GBS hiring market is
-already asking for agent-ops skills, and how thin is the transactional base?*
-The trend version needs a historical source and is left as a stated v2, not
-faked here.
+This is a **point-in-time cross-section, not a trend.** The search APIs return
+current live postings only — they cannot see 2023, so they cannot draw the
+pyramid-to-diamond line over time. The committed snapshot is Adzuna-only;
+Jooble is an implemented but currently unavailable second source. What the
+project can answer is the honest first question: *right now, how much of the
+GBS hiring market is already asking for agent-ops skills, and how thin is the
+transactional base?* The trend version needs a historical source and is left
+as a stated v2, not faked here.
 
 ## Method
 
@@ -129,7 +130,8 @@ The repository includes a committed generated snapshot in `RESULTS.md`,
 `dashboard.html`, and `data/chart_mix.png`, so a reviewer can see an actual
 finding before configuring API keys. These are dated point-in-time outputs, not
 historical data; rerunning the pipeline replaces them with a newer snapshot.
-The current committed snapshot is the last complete Adzuna-only run. Jooble
+The current committed snapshot is the complete Adzuna-only run across
+`ch`, `de`, `es`, `gb`, `in`, `mx`, `nl`, `pl`, `sg`, and `za`. Jooble
 integration is implemented, but its freshly requested key currently returns
 `403 Forbidden`, so no Jooble rows are silently treated as zero demand.
 
@@ -141,11 +143,11 @@ easy to mistake for proof that the market has no agent-ops demand.
 The latest diagnostic run reaches `100%` agent_ops recall in the DE, IN, NL,
 and PL slices, but the overall country-set accuracy is only `60%`. This is a
 debugging signal for taxonomy work, not a country ranking or a market estimate.
-The current 12-market design is source-specific: Adzuna covers `PL`, `IN`,
-`MX`, `NL`, `DE`, `CH`, `ES`, and `SG`; Jooble covers `PT`, `RO`, `HU`, and
-`CZ`. These are a deliberate comparison sample, not a claim that they represent
-all outsourcing activity. The report keeps source provenance visible because
-Jooble and Adzuna are aggregators with potentially overlapping supply.
+The **planned** 12-market design is source-specific: Adzuna targets `PL`, `IN`,
+`MX`, `NL`, `DE`, `CH`, `ES`, and `SG`; Jooble targets `PT`, `RO`, `HU`, and
+`CZ`. Those planned markets are distinct from the committed Adzuna snapshot
+above. The report keeps source provenance visible because Jooble and Adzuna are
+aggregators with potentially overlapping supply.
 
 The Jooble adapter fails closed: an API `403` or unavailable Jooble market is
 reported as unavailable and contributes no zero-valued jobs to the findings.
@@ -155,6 +157,11 @@ This keeps a source outage from being mistaken for weak hiring demand.
 
 - **Family mix:** a distribution of posting classifications, not a measurement
   of employee headcount or organisational design.
+- **Confidence is asymmetric:** the `agent_ops` precision is strong in the
+  current 60-case gold set, so detected agent-ops roles are credible; recall is
+  only `42.9%`, so a low agent-ops share is a lower bound. The
+  transactional-vs-judgment split is exploratory because overall accuracy is
+  only `66.7%`.
 - **Fallback share:** how much of the run was not decided by the visible rules;
   a high share is evidence to improve the taxonomy before making a strong claim.
 - **Agent-ops share:** a narrow construct for roles involving AI or automation

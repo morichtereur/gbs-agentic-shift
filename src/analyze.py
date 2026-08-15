@@ -183,6 +183,7 @@ def run() -> None:
         lines += [
             f"- Taxonomy gold-set accuracy: {accuracy:.1%} (n=60).",
             f"- Gold-set agent_ops recall: {agent_recall:.1%}; the agent_ops share should be treated as a lower-bound signal until recall improves.",
+                f"- Confidence split: agent_ops precision is strong, but the transactional-vs-judgment mix is exploratory at {accuracy:.1%} overall accuracy.",
         ]
     lines += [
         "",

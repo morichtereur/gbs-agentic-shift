@@ -31,6 +31,7 @@ def run() -> None:
     payload = json.dumps(data, ensure_ascii=True)
     n = len(data)
     run_date = datetime.now(timezone.utc).date().isoformat()
+    source_label = " + ".join(sorted({row["source_name"] for row in data}))
 
     page = """<!doctype html>
 <meta charset="utf-8">
@@ -95,7 +96,7 @@ def run() -> None:
   <section class="hero"><div><div class="eyebrow">Labour-market readout / 01</div><h1>Where the GBS job market is asking for judgment.</h1><p class="dek">A transparent scan of live finance-operations postings, testing whether the pyramid-to-diamond thesis is visible in demand today.</p></div><div class="hero-note"><strong>Point-in-time</strong>Current postings are a cross-section, not a trend line. They show demand, not workforce headcount.</div></section>
   <section><div class="section-head"><h2>The shape of demand</h2><span class="section-kicker">Family mix / n={n}</span></div><div class="kpis" id="kpis"></div><div class="mix" id="mix" role="img" aria-label="Family mix"></div><div class="legend" id="legend"></div></section>
   <section><div class="section-head"><h2>Postings, made inspectable</h2><span class="section-kicker" id="result-count"></span></div><div class="toolbar"><input id="search" type="search" placeholder="Search title, company, or evidence" aria-label="Search postings"><select id="country" aria-label="Filter by country"><option value="all">All countries</option></select><div id="filters"></div><button id="export" type="button">Export visible CSV</button><span class="toolbar-note">Rules leave phrases. Models leave reasons.</span></div><div class="table-wrap"><table><thead><tr><th>Market</th><th>Role</th><th>Family</th><th>Why it landed here</th></tr></thead><tbody id="rows"></tbody></table><div class="empty" id="empty" hidden>No postings match those filters.</div></div></section>
-  <footer class="footer"><span>Sources: Adzuna + Jooble · market sets in <strong>src/config.py</strong></span><span>Taxonomy is deterministic; Claude handles only the ambiguous residual.</span></footer>
+  <footer class="footer"><span>Observed source: {source_label} · market sets in <strong>src/config.py</strong></span><span>Taxonomy is deterministic; Claude handles only the ambiguous residual.</span></footer>
 </main>
 <script>
 const DATA = {payload};
@@ -119,7 +120,8 @@ const countries=[...new Set(DATA.map(d=>d.country))].sort(), select=document.get
 </script>
 """
     out = C.ROOT / "dashboard.html"
-    out.write_text(page.format(n=n, payload=payload, run_date=run_date))
+    out.write_text(page.format(n=n, payload=payload, run_date=run_date,
+                   source_label=source_label))
     print(f"Wrote dashboard.html ({n} postings).")
 
 
