@@ -2,6 +2,8 @@
 
 **Testing the GBS pyramid-to-diamond thesis against the live hiring market.**
 
+[![Tests](https://github.com/morichtereur/gbs-agentic-shift/actions/workflows/test.yml/badge.svg)](https://github.com/morichtereur/gbs-agentic-shift/actions/workflows/test.yml)
+
 McKinsey argues that agentic AI turns the GBS talent pyramid into a diamond: a
 shrinking transactional base, a widening judgment-based middle, and a new layer
 of people managing the "agent force"
