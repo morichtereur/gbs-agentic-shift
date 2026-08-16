@@ -32,7 +32,7 @@ SEARCH_TERMS = [
     "order to cash",
 ]
 
-# Claude — only used for the ambiguous residual the taxonomy can't decide.
+# LLM — only used for the ambiguous residual the taxonomy can't decide.
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 CLASSIFIER_MODEL = os.getenv("CLASSIFIER_MODEL", "claude-sonnet-5")
 RECLASSIFY = os.getenv("GBS_RECLASSIFY", "0").lower() in {"1", "true", "yes"}

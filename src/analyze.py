@@ -243,8 +243,8 @@ def run() -> None:
         "## Method transparency",
         "",
         f"- {dict(src).get('taxonomy',0)} labelled by the deterministic taxonomy, "
-        f"{dict(src).get('model',0)} by the Claude fallback.",
-        f"- Claude fallback share among included postings: {dict(src).get('model',0)/total:.0%}.",
+        f"{dict(src).get('model',0)} by the LLM fallback.",
+        f"- LLM fallback share among included postings: {dict(src).get('model',0)/total:.0%}.",
         f"- {excluded} postings were labelled `none` and excluded from the family mix.",
         f"- {unlabeled} fetched postings remain unlabelled and are excluded from this report.",
         f"- Agent-ops audit: {audit_counts.get('true', 0)} clear, "
