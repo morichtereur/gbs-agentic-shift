@@ -5,3 +5,6 @@ data/*.duckdb
 eval/labels.todo.jsonl
 eval/labels_country.todo.jsonl
 .venv/
+
+# macOS
+.DS_Store
