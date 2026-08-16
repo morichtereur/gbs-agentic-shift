@@ -2,7 +2,7 @@
 Two-stage classification.
 
 Stage 1 (taxonomy.py): deterministic, auditable, decides the clear majority.
-Stage 2 (here): Claude decides ONLY the residual the taxonomy flagged ambiguous,
+Stage 2 (here): the LLM decides ONLY the residual the taxonomy flagged ambiguous,
 and its reasoning is logged so a reader can audit it the same way as stage 1.
 
 The split matters for credibility: the headline number is carried by the
@@ -55,7 +55,7 @@ _THREAD_STATE = threading.local()
 
 
 def _model_label_safe(title: str, description: str) -> dict:
-    """Call Claude with bounded concurrency and a process-wide request gap."""
+    """Call the LLM with bounded concurrency and a process-wide request gap."""
     global _NEXT_REQUEST
     with _RATE_LOCK:
         now = time.monotonic()

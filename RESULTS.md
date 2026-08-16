@@ -43,8 +43,8 @@ Delivery hubs and high-cost retained markets are different populations. Pooling 
 
 ## Method transparency
 
-- 1471 labelled by the deterministic taxonomy, 639 by the Claude fallback.
-- Claude fallback share among included postings: 30%.
+- 1471 labelled by the deterministic taxonomy, 639 by the LLM fallback.
+- LLM fallback share among included postings: 30%.
 - 289 postings were labelled `none` and excluded from the family mix.
 - 0 fetched postings remain unlabelled and are excluded from this report.
 - Agent-ops audit: 4 clear, 4 borderline, 3 likely false positives, 3 duplicate rows.

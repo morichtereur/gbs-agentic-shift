@@ -3,7 +3,7 @@ Deterministic skill taxonomy for GBS job postings.
 
 This is the auditable first pass. Every label a posting receives can be traced
 to the exact phrases that produced it — no model judgement, no black box. The
-Claude fallback in classify.py only runs on the residual this can't decide.
+LLM fallback in classify.py only runs on the residual this can't decide.
 
 Three families, mapped to McKinsey's pyramid->diamond thesis:
   - transactional : rule-based processing work (the shrinking base of the pyramid)

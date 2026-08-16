@@ -79,7 +79,7 @@ set, not assumed:
 | Overall accuracy | 66.7% | the transactional/judgment split is **exploratory** |
 | `agent_ops` precision | 100% | detected agent-ops roles are **credible** |
 | `agent_ops` recall | 42.9% | the low agent-ops share is a **lower bound** |
-| Claude fallback share | 30% | how much was not decided by visible rules |
+| LLM fallback share | 30% | how much was not decided by visible rules |
 
 **Confidence is asymmetric, and that shapes what may be said.** The defensible
 headline is that agent-ops demand is small — precision is perfect, so the roles
@@ -105,7 +105,7 @@ families. Every label traces back to the exact phrases that produced it — no
 model in the critical path. The families live in code, editable and visible,
 not hidden in a prompt.
 
-**2. Claude fallback** (`src/classify.py`) decides *only* the residual the
+**2. LLM fallback** (`src/classify.py`) decides *only* the residual the
 taxonomy flags as ambiguous — no family hit, or a non-agent-ops tie — and logs
 a one-line reason, so its calls are auditable the same way. The share of
 postings that needed it is reported rather than buried.
@@ -135,7 +135,7 @@ Useful switches: `GBS_MAX_PAGES=1` for a smoke run (default is five pages per
 term and country), `ADZUNA_COUNTRIES` / `JOOBLE_COUNTRIES` to narrow the
 comparison, `GBS_RECLASSIFY=1` when the taxonomy changed and an existing DuckDB
 run needs relabelling. After editing phrases, `make refresh-taxonomy` updates
-every clear label without spending a Claude call. API keys are read from the
+every clear label without spending an LLM call. API keys are read from the
 environment only.
 
 ## Building a gold set
@@ -187,7 +187,7 @@ overlapping supply.
   taxonomy is strongest in English and German. Polish finance and automation
   phrases are included, but a low PL count may still be a language artifact.
 - **A seniority profile.** Inferred from title words only — directional.
-- **A validated fallback.** Claude's reasons are logged for auditability, but
+- **A validated fallback.** The LLM's reasons are logged for auditability, but
   the fallback itself has no labelled evaluation set yet.
 
 Search coverage, reposting and employer behaviour shape Adzuna results;
@@ -202,7 +202,7 @@ source-overlap report first.
 | `src/fetch.py` | source-aware Adzuna/Jooble retrieval, idempotent DuckDB upserts |
 | `src/taxonomy.py` | visible phrases, scoring, tie rule, audit hits |
 | `src/orgtype.py` | captive / BPO / advisory and delivery / retained market lists |
-| `src/classify.py` | taxonomy first, Claude fallback for the residual |
+| `src/classify.py` | taxonomy first, LLM fallback for the residual |
 | `src/analyze.py` | generated report, chart, country and seniority cuts |
 | `src/dashboard.py` | standalone research brief and posting-level audit view |
 | `eval/eval_classify.py` | gold-set metrics and confusion matrix |
@@ -211,7 +211,7 @@ source-overlap report first.
 
 ## Stack
 
-`Python` · `DuckDB` · `Claude API` · `matplotlib` · `pytest`
+`Python` · `DuckDB` · `LLM API` · `matplotlib` · `pytest`
 
 ---
 
