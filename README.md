@@ -7,7 +7,7 @@
 McKinsey argues that agentic AI turns the GBS talent pyramid into a diamond: a
 shrinking transactional base, a widening judgment-based middle, and a new layer
 of people managing the "agent force"
-([McKinsey Talks Operations, Aug 2026](https://www.mckinsey.com/capabilities/operations/our-insights/agentic-ai-and-the-future-of-global-business-services)).
+(McKinsey Talks Operations, Aug 2026 — linked in the repository description).
 That is a claim about what work looks like. The labour market is where it is
 either visible or not — so this reads it off job postings instead of taking it
 on faith.
