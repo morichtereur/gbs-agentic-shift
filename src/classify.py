@@ -73,7 +73,9 @@ def _model_label_safe(title: str, description: str) -> dict:
             _THREAD_STATE.client = client
         return _model_label(client, title, description)
     except Exception as exc:
-        return {"label": "none", "reason": f"model request failed: {type(exc).__name__}"}
+        detail = str(exc).splitlines()[0][:160] if str(exc) else ""
+        return {"label": "none",
+                "reason": f"model request failed: {type(exc).__name__}: {detail}"}
 
 
 def run() -> None:
@@ -150,6 +152,26 @@ def run() -> None:
     model_n = len(model_tasks)
     print(f"Classified {tax_n} by taxonomy, {model_n} by model "
           f"({model_n / max(tax_n + model_n, 1):.0%} needed the fallback).")
+
+    # A failed model call degrades to label 'none' per row, which is right for
+    # a stray timeout but catastrophic in bulk: every ambiguous posting drops
+    # out and the run ships a taxonomy-only mix that looks measured. Bulk
+    # failure is therefore fatal — better no snapshot than a biased one.
+    failures = [out["reason"] for _, out in model_results.values()
+                if out.get("reason", "").startswith("model request failed")]
+    if failures:
+        counts: dict[str, int] = {}
+        for reason in failures:
+            counts[reason] = counts.get(reason, 0) + 1
+        print(f"WARNING: {len(failures)} of {model_n} model calls failed:")
+        for reason, n in sorted(counts.items(), key=lambda kv: -kv[1])[:5]:
+            print(f"  {n:5d}  {reason}")
+        if len(failures) > 0.1 * model_n:
+            raise SystemExit(
+                "More than 10% of LLM fallback calls failed — refusing to pass "
+                "a taxonomy-only sample off as the measured mix. Fix the cause "
+                "above (usually the ANTHROPIC_API_KEY secret) and re-run."
+            )
 
 
 if __name__ == "__main__":
