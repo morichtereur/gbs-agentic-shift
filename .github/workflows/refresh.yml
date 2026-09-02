@@ -1,0 +1,80 @@
+name: Monthly refresh
+
+# Re-runs the full pipeline on a fresh fetch, appends the snapshot to
+# data/history.csv, and commits the regenerated artifacts. Each run is an
+# independent cross-section; the committed history is what turns them into
+# the trend the study says a single snapshot cannot show.
+#
+# Requires four repository secrets: ADZUNA_APP_ID, ADZUNA_APP_KEY,
+# JOOBLE_API_KEY, ANTHROPIC_API_KEY. The guard step fails loudly if any is
+# missing, because classify.py would otherwise degrade silently — model
+# failures label postings 'none' and quietly shrink the sample.
+on:
+  schedule:
+    - cron: "0 6 1 * *" # 06:00 UTC on the 1st of each month
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    env:
+      ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}
+      ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
+      JOOBLE_API_KEY: ${{ secrets.JOOBLE_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      # The 2026-08-15 baseline was drawn from these ten Adzuna markets. The
+      # basket is pinned here so every snapshot samples the same countries —
+      # the README's point that the headline is basket-dependent cuts both
+      # ways: a drifting basket would fake a trend.
+      ADZUNA_COUNTRIES: pl,in,mx,nl,de,ch,es,sg,gb,za
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fail early if a secret is missing
+        run: |
+          for var in ADZUNA_APP_ID ADZUNA_APP_KEY JOOBLE_API_KEY ANTHROPIC_API_KEY; do
+            if [ -z "$(eval echo \"\$$var\")" ]; then
+              echo "::error::Repository secret $var is not set."
+              exit 1
+            fi
+          done
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - run: make fetch
+      - run: make classify
+      - run: make analyze
+      - run: make history
+      - run: make dashboard
+
+      - run: pytest tests/ -q
+
+      - name: Commit the refreshed artifacts
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RESULTS.md dashboard.html data/history.csv data/chart_mix.png
+          if git diff --cached --quiet; then
+            echo "Nothing changed."
+          else
+            git commit -m "Monthly refresh: $(date -u +%Y-%m-%d) snapshot"
+            git push
+          fi
+
+      - name: Open an issue if agent-ops demand crossed the threshold
+        if: ${{ hashFiles('data/alert.txt') != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create \
+            --title "Agent-ops share crossed the alert threshold" \
+            --body-file data/alert.txt

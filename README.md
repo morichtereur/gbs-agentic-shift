@@ -122,7 +122,7 @@ labels off real postings, and it is lower.
 ```bash
 cp .env.example .env      # Adzuna, Jooble and Anthropic keys
 make install
-make all                  # fetch → classify → analyze → dashboard
+make all                  # fetch → classify → analyze → history → dashboard
 make eval                 # taxonomy accuracy vs the gold set
 make test
 ```
@@ -137,6 +137,30 @@ comparison, `GBS_RECLASSIFY=1` when the taxonomy changed and an existing DuckDB
 run needs relabelling. After editing phrases, `make refresh-taxonomy` updates
 every clear label without spending an LLM call. API keys are read from the
 environment only.
+
+## From snapshot to trend
+
+A cross-section cannot test a thesis about change, so the repository refreshes
+itself: [`refresh.yml`](.github/workflows/refresh.yml) re-runs the full
+pipeline on the 1st of each month (or on demand from the Actions tab), appends
+the snapshot's aggregates to [`data/history.csv`](data/history.csv), and
+commits the regenerated artifacts. The dashboard reads that file and draws the
+series — agent-ops share, and the captive vs third-party transactional split,
+per snapshot.
+
+- The country basket is pinned in the workflow to the ten markets of the
+  2026-08-15 baseline, so snapshots compare like with like; a drifting basket
+  would fake a trend.
+- Each run is an independent fetch. Nothing carries over between months, so
+  every point is a fresh cross-section rather than an accumulating pool.
+- When the agent-ops share of any tracked segment (overall, captive, BPO,
+  delivery / retained / mixed markets) reaches 5% (`GBS_AGENT_OPS_ALERT`)
+  with the previous snapshot below it, the workflow opens a GitHub issue —
+  the watch-for-the-diamond alert.
+- The workflow needs four repository secrets — `ADZUNA_APP_ID`,
+  `ADZUNA_APP_KEY`, `JOOBLE_API_KEY`, `ANTHROPIC_API_KEY` — and fails loudly
+  if one is missing, because a missing LLM key would otherwise shrink the
+  sample silently.
 
 ## Building a gold set
 
@@ -176,9 +200,10 @@ overlapping supply.
 
 ## What this is not
 
-- **A trend.** The APIs return current live postings only; they cannot see
-  2023. The pyramid-to-diamond line over time needs a historical source and is
-  a stated v2, not faked here.
+- **A retrospective trend.** The APIs return current live postings only; they
+  cannot see 2023. The monthly refresh builds a forward series from the
+  August 2026 baseline — the pyramid-to-diamond line *before* that still
+  needs a historical source and is not faked here.
 - **Headcount.** Postings are demand. They lead the actual workforce and
   overstate the frontier.
 - **An organisational measurement.** The family mix is a distribution of

@@ -6,12 +6,124 @@ underlying postings so a reader can audit any bucket.
 
 from __future__ import annotations
 
+import csv
+import html as html_escape
 import json
 from datetime import datetime, timezone
 import duckdb
 
 from src import config as C
 from src.orgtype import org_type
+from src.history import HISTORY_PATH, snapshot_date
+
+
+def _load_history() -> dict[str, dict]:
+    """Snapshot date -> {(cut, segment, family): postings}."""
+    if not HISTORY_PATH.exists():
+        return {}
+    snapshots: dict[str, dict] = {}
+    with HISTORY_PATH.open(newline="") as fh:
+        for row in csv.DictReader(fh):
+            key = (row["cut"], row["segment"], row["family"])
+            snapshots.setdefault(row["date"], {})[key] = int(row["postings"])
+    return snapshots
+
+
+def _share(counts: dict, cut: str, segment: str, family: str) -> float | None:
+    total = sum(n for (c, s, _), n in counts.items() if c == cut and s == segment)
+    if not total:
+        return None
+    return counts.get((cut, segment, family), 0) / total
+
+
+def _trend_section(snapshots: dict[str, dict]) -> str:
+    """The trend exhibit, rendered server-side: it has no filters, so there is
+    no reason to ship it as JavaScript. One snapshot renders as points and an
+    honest note; the lines appear as monthly refreshes accumulate."""
+    if not snapshots:
+        return ""
+    dates = sorted(snapshots)
+    series = [
+        ("agent-ops share (all postings)", "#2f8f83",
+         [_share(snapshots[d], "all", "all", "agent_ops") for d in dates]),
+        ("captive transactional share", "#6f7d8c",
+         [_share(snapshots[d], "org", "captive", "transactional") for d in dates]),
+        ("BPO transactional share", "#d85d45",
+         [_share(snapshots[d], "org", "bpo", "transactional") for d in dates]),
+    ]
+
+    W, H, ML, MR, MT, MB = 920, 280, 52, 16, 14, 30
+    def x(i: int) -> float:
+        if len(dates) == 1:
+            return ML + (W - ML - MR) / 2
+        return ML + (W - ML - MR) * i / (len(dates) - 1)
+    def y(v: float) -> float:
+        return MT + (H - MT - MB) * (1 - v)
+
+    parts = [f'<svg viewBox="0 0 {W} {H}" role="img" '
+             'aria-label="Family shares across snapshots">']
+    for gv in (0, 0.25, 0.5, 0.75, 1):
+        parts.append(f'<line x1="{ML}" y1="{y(gv):.1f}" x2="{W-MR}" y2="{y(gv):.1f}" '
+                     'stroke="#d9d5ca" stroke-width="1"/>')
+        parts.append(f'<text x="{ML-8}" y="{y(gv)+4:.1f}" text-anchor="end" '
+                     f'font-size="11" fill="#667085">{gv:.0%}</text>')
+    for name, color, values in series:
+        pts = [(i, v) for i, v in enumerate(values) if v is not None]
+        if len(pts) > 1:
+            path = " ".join(f"{x(i):.1f},{y(v):.1f}" for i, v in pts)
+            parts.append(f'<polyline points="{path}" fill="none" stroke="{color}" '
+                         'stroke-width="2.2"/>')
+        for i, v in pts:
+            parts.append(f'<circle cx="{x(i):.1f}" cy="{y(v):.1f}" r="4" fill="{color}">'
+                         f'<title>{html_escape.escape(name)} · {dates[i]} · {v:.1%}</title></circle>')
+    for i, d in enumerate(dates):
+        parts.append(f'<text x="{x(i):.1f}" y="{H-8}" text-anchor="middle" '
+                     f'font-size="11" fill="#667085">{d}</text>')
+    parts.append("</svg>")
+    svg = "".join(parts)
+
+    legend = "".join(
+        f'<span class="legend-item"><i class="swatch" style="background:{color}"></i>'
+        f'<span>{name}</span></span>'
+        for name, color, _ in series
+    )
+
+    rows = []
+    for d in dates:
+        counts = snapshots[d]
+        total = sum(n for (c, s, _), n in counts.items() if c == "all" and s == "all")
+        cell = lambda cut, seg, fam: (
+            f"{_share(counts, cut, seg, fam):.1%}"
+            if _share(counts, cut, seg, fam) is not None else "—"
+        )
+        rows.append(
+            f"<tr><td class=\"country\">{d}</td><td>{total:,}</td>"
+            f"<td>{cell('all','all','transactional')}</td>"
+            f"<td>{cell('all','all','judgment')}</td>"
+            f"<td>{cell('all','all','agent_ops')}</td>"
+            f"<td>{cell('org','captive','transactional')}</td>"
+            f"<td>{cell('org','bpo','transactional')}</td></tr>"
+        )
+    table = (
+        '<div class="table-wrap"><table><thead><tr>'
+        "<th>Snapshot</th><th>Postings</th><th>Transactional</th><th>Judgment</th>"
+        "<th>Agent-ops</th><th>Captive transactional</th><th>BPO transactional</th>"
+        "</tr></thead><tbody>" + "".join(rows) + "</tbody></table></div>"
+    )
+
+    note = ""
+    if len(dates) == 1:
+        note = ('<p class="trend-note">One snapshot so far. Each monthly refresh adds '
+                "a point, and the diamond thesis — a claim about change — becomes "
+                "testable only as they accumulate.</p>")
+
+    return (
+        '<section><div class="section-head"><h2>Across snapshots</h2>'
+        f'<span class="section-kicker">Monthly refresh / {len(dates)} snapshot'
+        f'{"s" if len(dates) != 1 else ""}</span></div>'
+        f'{note}<div class="trend-chart">{svg}</div>'
+        f'<div class="legend">{legend}</div>{table}</section>'
+    )
 
 
 def run() -> None:
@@ -22,6 +134,7 @@ def run() -> None:
         WHERE l.label != 'none'
         ORDER BY l.label, p.country
     """).fetchall()
+    snap_date = snapshot_date(con)
     con.close()
 
     # Advisory firms are held out here for the same reason as in RESULTS.md:
@@ -37,6 +150,7 @@ def run() -> None:
     payload = json.dumps(data, ensure_ascii=True)
     n = len(data)
     run_date = datetime.now(timezone.utc).date().isoformat()
+    trend = _trend_section(_load_history())
     source_label = " + ".join(sorted({row["source_name"] for row in data}))
 
     page = """<!doctype html>
@@ -93,14 +207,18 @@ def run() -> None:
   .tag.transactional {{ background:var(--slate); }} .tag.judgment {{ background:var(--ink); }} .tag.agent_ops {{ background:var(--teal); }}
   .why {{ max-width:390px; color:#475467; font-size:12px; }} .source {{ display:block; margin-top:4px; color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.08em; }}
   .empty {{ padding:45px 20px; color:var(--muted); text-align:center; }}
+  .trend-chart {{ background:var(--panel); border:1px solid var(--line); padding:12px 14px 6px; }}
+  .trend-chart svg {{ width:100%; height:auto; display:block; }}
+  .trend-note {{ max-width:650px; margin:0 0 14px; border-left:3px solid var(--teal); padding:6px 0 6px 18px; color:#475467; font-size:13px; }}
   .footer {{ display:flex; justify-content:space-between; gap:20px; margin-top:22px; color:var(--muted); font-size:11px; }}
   @media (max-width:760px) {{ .shell {{ padding:18px 18px 42px; }} .masthead {{ align-items:flex-start; gap:12px; }} .hero {{ display:block; padding:38px 0 30px; }} .hero-note {{ margin-top:30px; }} .kpis {{ grid-template-columns:repeat(2,1fr); }} .kpi:nth-child(2) {{ border-right:0; }} .kpi:nth-child(-n+2) {{ border-bottom:1px solid var(--line); }} .kpi:nth-child(3) {{ padding-left:0; }} .toolbar-note {{ width:100%; margin-left:0; }} input {{ min-width:0; width:100%; flex-basis:100%; }} h1 {{ font-size:45px; }} .footer {{ display:block; }} .footer span {{ display:block; margin-top:8px; }} }}
   @media (prefers-reduced-motion:reduce) {{ .segment {{ transition:none; }} }}
 </style>
 <main class="shell">
-  <header class="masthead"><div class="mark"><span class="mark-dot"></span> GBS / agentic shift</div><div class="meta">Research brief · snapshot {run_date}</div></header>
+  <header class="masthead"><div class="mark"><span class="mark-dot"></span> GBS / agentic shift</div><div class="meta">Research brief · postings collected {snap_date} · built {run_date}</div></header>
   <section class="hero"><div><div class="eyebrow">Labour-market readout / 01</div><h1>Where the GBS job market is asking for judgment.</h1><p class="dek">A transparent scan of live finance-operations postings, testing whether the pyramid-to-diamond thesis is visible in demand today.</p></div><div class="hero-note"><strong>Point-in-time</strong>Current postings are a cross-section, not a trend line. They show demand, not workforce headcount.</div></section>
   <section><div class="section-head"><h2>The shape of demand</h2><span class="section-kicker">Family mix / n={n}</span></div><div class="kpis" id="kpis"></div><div class="mix" id="mix" role="img" aria-label="Family mix"></div><div class="legend" id="legend"></div></section>
+  {trend}
   <section><div class="section-head"><h2>Postings, made inspectable</h2><span class="section-kicker" id="result-count"></span></div><div class="toolbar"><input id="search" type="search" placeholder="Search title, company, or evidence" aria-label="Search postings"><select id="country" aria-label="Filter by country"><option value="all">All countries</option></select><div id="filters"></div><button id="export" type="button">Export visible CSV</button><span class="toolbar-note">Rules leave phrases. Models leave reasons.</span></div><div class="table-wrap"><table><thead><tr><th>Market</th><th>Role</th><th>Family</th><th>Why it landed here</th></tr></thead><tbody id="rows"></tbody></table><div class="empty" id="empty" hidden>No postings match those filters.</div></div></section>
   <footer class="footer"><span>Observed source: {source_label} · market sets in <strong>src/config.py</strong></span><span>Taxonomy is deterministic; the LLM handles only the ambiguous residual.</span></footer>
 </main>
@@ -127,7 +245,7 @@ const countries=[...new Set(DATA.map(d=>d.country))].sort(), select=document.get
 """
     out = C.ROOT / "dashboard.html"
     out.write_text(page.format(n=n, payload=payload, run_date=run_date,
-                   source_label=source_label))
+                   snap_date=snap_date, source_label=source_label, trend=trend))
     print(f"Wrote dashboard.html ({n} postings).")
 
 

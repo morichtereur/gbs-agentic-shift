@@ -2,6 +2,7 @@ __pycache__/
 *.pyc
 .env
 data/*.duckdb
+data/alert.txt
 eval/labels.todo.jsonl
 eval/labels_country.todo.jsonl
 .venv/
