@@ -240,4 +240,4 @@ source-overlap report first.
 
 ---
 
-Built by [Moritz Richter](https://www.linkedin.com/in/moritz-richter-28297119a/) · Finance & Strategy Consultant · Zürich
+Built by [Moritz Richter](https://www.linkedin.com/in/moritz-richter-28297119a/) · Finance & Strategy Consultant · Zürich · [Portfolio](https://morichtereur.github.io/)
